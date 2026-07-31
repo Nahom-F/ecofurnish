@@ -390,7 +390,7 @@ export async function sendOrderStatusUpdateEmail(
   status: string,
   trackingNote?: string | null
 ) {
-  const copy = STATUS_EMAIL_COPY[status];
+    const copy = STATUS_EMAIL_COPY[status as keyof typeof STATUS_EMAIL_COPY];
   if (!copy) return;
 
   if (!resend) {
