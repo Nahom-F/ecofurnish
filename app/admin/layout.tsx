@@ -1,0 +1,26 @@
+import Link from "next/link";
+import { requireAdmin } from "@/lib/require-admin";
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await requireAdmin();
+
+  return (
+    <div className="container mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-8 flex items-center gap-6 border-b border-border/60 pb-4">
+        <h1 className="text-xl font-bold tracking-tight">Admin</h1>
+        <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
+          <Link href="/admin" className="transition-colors hover:text-foreground">
+            Dashboard
+          </Link>
+          <Link href="/admin/products" className="transition-colors hover:text-foreground">
+            Products
+          </Link>
+          <Link href="/admin/orders" className="transition-colors hover:text-foreground">
+            Orders
+          </Link>
+        </nav>
+      </div>
+      {children}
+    </div>
+  );
+}
