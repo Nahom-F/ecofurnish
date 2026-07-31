@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    await authClient.forgetPassword(
+    await authClient.requestPasswordReset(
       { email, redirectTo: "/reset-password" },
       {
         // Better Auth responds the same way whether or not the email is

@@ -12,6 +12,25 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+function safeGetLocalStorageItem(key: string) {
+  try {
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeSetLocalStorageItem(key: string, value: string) {
+  try {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(key, value)
+  } catch {
+    // Some browsers restrict storage access in private mode or locked-down
+    // contexts; the banner should never crash the page if that happens.
+  }
+}
+
 function isStandalone() {
   if (typeof window === 'undefined') return false
   return (
@@ -39,10 +58,20 @@ function isDesktopSafari() {
 export default function InstallAppBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [manualHint, setManualHint] = useState<'ios' | 'safari' | null>(null)
-  const [dismissed, setDismissed] = useState(true) // default hidden until checks pass
+  // Starts hidden on every render that happens before mount — the server
+  // render, and (critically) the client's first hydration pass too, since
+  // that pass must produce the same output as the server or React treats it
+  // as a hydration error. Only the effect below, which runs strictly after
+  // mount, is allowed to flip this based on window/localStorage/user-agent.
+  const [dismissed, setDismissed] = useState(true)
 
   useEffect(() => {
-    if (isStandalone() || localStorage.getItem(DISMISS_KEY)) return
+    // Deliberately deferred to an effect rather than computed during render:
+    // isStandalone/localStorage/user-agent only exist in the browser, so
+    // evaluating them during the initial render would make the client's
+    // first pass disagree with the server-rendered (window-less) output —
+    // exactly the hydration mismatch this structure exists to avoid.
+    if (isStandalone() || safeGetLocalStorageItem(DISMISS_KEY)) return
 
     setDismissed(false)
 
@@ -66,7 +95,7 @@ export default function InstallAppBanner() {
   }, [])
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1')
+    safeSetLocalStorageItem(DISMISS_KEY, '1')
     setDismissed(true)
   }
 

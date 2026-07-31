@@ -14,7 +14,7 @@ import { authClient } from "@/lib/auth-client";
 export default function ResetPasswordPage() {
   const router = useRouter();
   // Better Auth appends the token to redirectTo itself (see
-  // authClient.forgetPassword's redirectTo in app/forgot-password) —
+  // authClient.requestPasswordReset's redirectTo in app/forgot-password) —
   // this page just reads it back off the URL.
   const token = useSearchParams().get("token");
 

@@ -77,7 +77,11 @@ export async function createCheckoutSession(orderId: string) {
 
   // Chapa requires a unique tx_ref per attempt — reusing the order id alone
   // would collide if the customer retries after a cancel, so we timestamp it.
-  const txRef = `ecofurnish-${orderId.slice(0, 8)}-${Date.now()}`;
+  // Chapa also caps tx_ref at 50 characters — the full order UUID plus a
+  // prefix and timestamp blew past that, so only the first 8 hex characters
+  // are used. Nothing parses orderId back out of this string (see the
+  // Chapa webhook handler), so truncating it doesn't break anything.
+  const txRef = `EF-${orderId.slice(0, 8)}-${Date.now()}`;
   const [firstName, ...rest] = order.customerName.split(" ");
 
   const result = await initializeChapaTransaction({

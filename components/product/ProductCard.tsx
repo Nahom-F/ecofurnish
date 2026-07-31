@@ -17,20 +17,25 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, currency = "ETB" }: ProductCardProps) {
   const [open, setOpen] = useState(false);
-  const [canHover, setCanHover] = useState(false);
+  const [canHover] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches
+  );
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Only the mouse-hover trigger is gated to real pointer devices — on a
-  // touchscreen, :hover-style interactions don't get a reliable "leave"
-  // event, so the preview would just get stuck open after a tap. Checked
-  // once on mount rather than in render, since matchMedia isn't available
-  // during SSR.
   useEffect(() => {
-    setCanHover(window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+    return () => {
+      if (showTimer.current) {
+        clearTimeout(showTimer.current);
+        showTimer.current = null;
+      }
+    };
   }, []);
 
   function scheduleOpen() {
     if (!canHover) return;
+    if (showTimer.current) clearTimeout(showTimer.current);
     showTimer.current = setTimeout(() => setOpen(true), 200);
   }
 

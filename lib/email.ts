@@ -361,7 +361,7 @@ const STATUS_EMAIL_COPY = {
   shipped: {
     subject: "Your order has shipped",
     heading: "Your order has shipped",
-    body: (trackingNote) =>
+    body: (trackingNote?: string | null) =>
       trackingNote
         ? `Your order is on its way. Tracking: ${trackingNote}`
         : "Your order is on its way.",
@@ -376,7 +376,7 @@ const STATUS_EMAIL_COPY = {
     heading: "Order cancelled",
     body: () => "Your order has been cancelled. If this wasn't expected, just reply to this email.",
   },
-};
+} as const;
 
 /** Fired from the admin panel whenever an order's status changes —
  * "pending" is deliberately not in STATUS_EMAIL_COPY (that's the default

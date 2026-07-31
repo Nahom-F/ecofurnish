@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Look up by chapaTxRef rather than parsing orderId out of the tx_ref
-  // string — txRef is `ecofurnish-{orderId}-{timestamp}` (see lib/chapa.ts)
-  // and orderId is itself a UUID full of hyphens, so splitting on "-"
-  // would silently grab only the first UUID segment.
+  // string — txRef is `EF-{orderId.slice(0,8)}-{timestamp}` (see
+  // app/actions/orders.ts), and doesn't even contain the full orderId to
+  // parse back out.
   const [order] = await db.select().from(orders).where(eq(orders.chapaTxRef, txRef)).limit(1);
   if (!order) {
     return NextResponse.json({ error: "Unknown transaction" }, { status: 404 });
