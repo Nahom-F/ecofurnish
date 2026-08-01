@@ -9,7 +9,7 @@
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#047857",
   "categories": ["shopping", "furniture", "lifestyle"],
   "lang": "en",
   "dir": "ltr",

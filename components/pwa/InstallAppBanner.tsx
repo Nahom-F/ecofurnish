@@ -111,8 +111,7 @@ export default function InstallAppBanner() {
 
   return (
     <div
-      className="fixed inset-x-3 bottom-3 z-50 flex items-start gap-3 rounded-lg border border-border bg-background p-3 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-80"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex items-start gap-3 rounded-lg border border-border bg-background p-3 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-80"
       role="dialog"
       aria-label="Install EcoFurnish"
     >

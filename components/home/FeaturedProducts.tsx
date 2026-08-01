@@ -21,7 +21,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
           subtitle="Carefully crafted furniture designed for modern living."
         />
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {products.map((product, index) => (
             <div
               key={product.id}

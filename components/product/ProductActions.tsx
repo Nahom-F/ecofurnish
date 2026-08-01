@@ -26,16 +26,16 @@ export default function ProductActions({ product }: { product: Product }) {
   }
 
   return (
-    <CardFooter className="mt-auto flex gap-2 bg-transparent p-4 pt-0">
+    <CardFooter className="mt-auto flex gap-1.5 bg-transparent p-3 pt-0 sm:gap-2 sm:p-4 sm:pt-0">
       <Button
         size="lg"
-        className="flex flex-1 items-center gap-2"
+        className="flex flex-1 items-center gap-1 text-xs sm:gap-1.5 sm:text-sm"
         disabled={product.stock <= 0}
         onClick={handleAddToCart}
       >
         {product.stock > 0 ? (
           <>
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Add to Cart
           </>
         ) : (

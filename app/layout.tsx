@@ -11,6 +11,7 @@ import { CurrencyProvider } from '@/lib/currency-context'
 import { siteConfig } from '@/config/site'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import InstallAppBanner from '@/components/pwa/InstallAppBanner'
+import MobileBottomNav from '@/components/layout/navbar/MobileBottomNav'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -94,6 +95,7 @@ export default function RootLayout({
                 <Footer />
                 <Toaster />
                 <InstallAppBanner />
+                <MobileBottomNav />
               </WishlistProvider>
             </CartProvider>
           </CurrencyProvider>

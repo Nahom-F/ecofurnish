@@ -12,10 +12,10 @@ export default function ProductInfo({
 }) {
   return (
     <>
-      <CardHeader className="p-4 pb-2">
-        <div className="flex items-start justify-between gap-4">
-          <CardTitle className="line-clamp-1 text-lg">{product.name}</CardTitle>
-          <span className="whitespace-nowrap text-lg font-bold text-primary">
+      <CardHeader className="p-3 pb-2 sm:p-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-4">
+          <CardTitle className="line-clamp-1 text-base sm:text-lg">{product.name}</CardTitle>
+          <span className="whitespace-nowrap text-base font-bold text-primary sm:text-lg">
             {formatPrice(product.price, currency)}
           </span>
         </div>
@@ -26,7 +26,7 @@ export default function ProductInfo({
         ) : null}
       </CardHeader>
 
-      <CardContent className="grow p-4 pt-0">
+      <CardContent className="grow p-3 pt-0 sm:p-4 sm:pt-0">
         <p className="line-clamp-2 text-sm text-muted-foreground">
           {product.description || "Sustainable furniture crafted from recycled materials."}
         </p>
