@@ -25,7 +25,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
           {products.map((product, index) => (
             <div
               key={product.id}
-              className="animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-500"
+              className="animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-backwards duration-500"
               style={{ animationDelay: `${index * 80}ms` }}
             >
               <ProductCard product={product} currency={currency} />

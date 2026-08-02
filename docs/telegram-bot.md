@@ -89,3 +89,61 @@ A couple of things worth knowing going in:
   "sometime between 7:00 and 7:59 UTC," not on the dot.
 - To change the time, edit the schedule string in `vercel.json` (currently
   `"0 7 * * *"`, cron syntax, always UTC) and redeploy.
+
+## Interactive commands (message the bot, get an answer back)
+
+Everything above is one-way: Vercel pushes a digest to you once a day.
+This part is different — it lets you actually message the bot (`/stock`,
+`/digest`, `/help`) and get a live reply, on your own schedule. It's a
+separate mechanism (a Telegram **webhook**, not the cron job), and needs
+its own one-time setup.
+
+### 1. Pick a webhook secret
+
+Any long random string works — this is what proves a request hitting
+your site actually came from Telegram, not someone who found the URL.
+Generate one however's easiest, e.g. in a terminal:
+
+```
+openssl rand -hex 32
+```
+
+### 2. Add it to your env vars
+
+```
+TELEGRAM_WEBHOOK_SECRET="paste-the-random-string-here"
+```
+
+Add this in Vercel too (**Settings → Environment Variables**) — the
+webhook only runs in production, so it needs to exist there, not just
+locally.
+
+### 3. Register the webhook with Telegram
+
+This is a one-time call — after this, Telegram remembers the URL and
+starts POSTing every incoming message to it. Visit this in any browser,
+filling in your real token, domain, and the secret from step 1:
+
+```
+https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://ecofurnish.de5.net/api/telegram/webhook&secret_token=<YOUR_WEBHOOK_SECRET>
+```
+
+A `{"ok":true,"result":true,...}` response means it's registered.
+
+### 4. Try it
+
+Message your bot `/stock` or `/digest` in Telegram. If nothing comes
+back, check Vercel's function logs for `/api/telegram/webhook` — the
+route silently no-ops (rather than erroring) for requests that fail the
+secret-token check or come from a chat ID other than your own
+`TELEGRAM_CHAT_ID`, both deliberate, so check those two values line up
+with what you registered above before assuming something's broken.
+
+### If you ever want to stop it
+
+```
+https://api.telegram.org/bot<TOKEN>/deleteWebhook
+```
+
+Visiting that unregisters it — the bot goes back to purely one-way
+(digest only) until you call `setWebhook` again.

@@ -29,18 +29,28 @@ export default function MobileBottomNav() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  // Home and Categories both live at "/" — only the hash tells them apart,
+  // and usePathname() doesn't include it, so it's tracked separately here.
+  const [hash, setHash] = useState('')
+  useEffect(() => {
+    setHash(window.location.hash)
+    const onHashChange = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
   const tabs: Tab[] = [
     {
       href: '/',
       label: 'Home',
       icon: Home,
-      isActive: (p) => p === '/',
+      isActive: (p) => p === '/' && hash !== '#all-products',
     },
     {
       href: '/#all-products',
       label: 'Categories',
       icon: LayoutGrid,
-      isActive: () => false,
+      isActive: (p) => p === '/' && hash === '#all-products',
     },
     {
       href: '/wishlist',

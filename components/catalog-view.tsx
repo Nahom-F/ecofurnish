@@ -135,7 +135,7 @@ export function CatalogView({ products }: { products: Product[] }) {
           {filtered.map((product, index) => (
             <div
               key={product.id}
-              className="animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-500"
+              className="animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-backwards duration-500"
               style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
             >
               <ProductCard product={product} currency={currency} />
