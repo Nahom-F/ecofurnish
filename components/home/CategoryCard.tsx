@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 interface CategoryCardProps {
   title: string;
@@ -10,7 +11,10 @@ export default function CategoryCard({
   image,
 }: CategoryCardProps) {
   return (
-    <article className="group relative overflow-hidden rounded-2xl">
+    <Link
+      href={`/?room=${encodeURIComponent(title)}#all-products`}
+      className="group relative block overflow-hidden rounded-2xl"
+    >
       <Image
         src={image}
         alt={title}
@@ -24,6 +28,6 @@ export default function CategoryCard({
           {title}
         </h3>
       </div>
-    </article>
+    </Link>
   );
 }

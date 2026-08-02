@@ -13,6 +13,7 @@ export interface ProductInput {
   price: string;
   imageUrl: string;
   category: string;
+  rooms: string[];
   stock: number;
   plasticWeightKg: string;
 }

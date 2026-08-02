@@ -38,7 +38,7 @@ export default function MobileBottomNav() {
     },
     {
       href: '/#all-products',
-      label: 'Shop',
+      label: 'Categories',
       icon: LayoutGrid,
       isActive: () => false,
     },

@@ -11,9 +11,18 @@ export default function NavbarActions() {
         <SearchButton />
       </div>
       <ThemeToggle />
-      <WishlistButton />
-      <CartButton />
-      <UserMenu />
+      {/* On mobile these live in the bottom tab bar instead — showing them
+          here too would just duplicate navigation that's already one thumb
+          away. */}
+      <div className="hidden sm:block">
+        <WishlistButton />
+      </div>
+      <div className="hidden sm:block">
+        <CartButton />
+      </div>
+      <div className="hidden sm:block">
+        <UserMenu />
+      </div>
     </div>
   );
 }

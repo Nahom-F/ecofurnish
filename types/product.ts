@@ -8,6 +8,7 @@ export interface Product {
   price: string; // numeric columns come back as strings from Drizzle
   imageUrl: string | null;
   category: string;
+  rooms: string[];
   stock: number;
   plasticWeightKg: string;
   // Only present where the fetching page ran attachRatings() (see

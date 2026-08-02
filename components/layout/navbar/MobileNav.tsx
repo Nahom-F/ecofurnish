@@ -27,7 +27,7 @@ export default function MobileNav() {
 
       <DialogContent
         showCloseButton={false}
-        className="left-0 top-0 h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-0 data-open:slide-in-from-left data-closed:slide-out-to-left sm:max-w-sm"
+        className="left-0 top-0 h-dvh w-4/5 max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-0 shadow-2xl data-open:slide-in-from-left data-closed:slide-out-to-left sm:max-w-sm"
       >
         <DialogTitle className="sr-only">Menu</DialogTitle>
         <div className="flex h-16 items-center justify-between border-b border-border/60 px-4">

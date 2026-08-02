@@ -9,6 +9,12 @@ export const products = pgTable("products", {
   imageUrl: text("image_url"),
   // Used to group products in the catalog filters (e.g. "Seating", "Storage")
   category: text("category").notNull().default("Other"),
+  // Which room(s) this piece suits (e.g. "Living Room", "Bedroom") — kept
+  // separate from `category` since it's a different axis (furniture type
+  // vs. where it's used) and a product can reasonably belong to more than
+  // one room at once, e.g. a modular shelf fitting both a living room and
+  // an office.
+  rooms: text("rooms").array().notNull().default([]),
   stock: integer("stock").default(0).notNull(),
   // Tracking the environmental impact
   plasticWeightKg: numeric("plastic_weight_kg", { precision: 5, scale: 2 }).default('0.00').notNull(),
