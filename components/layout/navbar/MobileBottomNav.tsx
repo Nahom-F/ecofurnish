@@ -84,6 +84,27 @@ export default function MobileBottomNav() {
     },
   ]
 
+  // Home ("/") and Categories ("/#all-products") both resolve to the same
+  // pathname. Next's Link only does a real navigation when the pathname
+  // changes, so tapping between two tabs that share a pathname (or tapping
+  // a tab you're effectively already on) can silently no-op instead of
+  // scrolling. Handle those cases with a manual scroll and let Link do its
+  // normal thing for every other (cross-page) tap.
+  const handleTabClick = (e: React.MouseEvent, href: string) => {
+    const [path, hash] = href.split('#')
+    const targetPath = path || '/'
+    if (pathname !== targetPath) return // real navigation — let Link handle it
+
+    e.preventDefault()
+    if (hash) {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.history.replaceState(null, '', `${targetPath}#${hash}`)
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      window.history.replaceState(null, '', targetPath)
+    }
+  }
+
   return (
     <nav
       aria-label="Primary"
@@ -98,6 +119,7 @@ export default function MobileBottomNav() {
             <li key={tab.label} className="flex-1">
               <Link
                 href={tab.href}
+                onClick={(e) => handleTabClick(e, tab.href)}
                 className={`flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${
                   active ? 'text-emerald-700' : 'text-muted-foreground'
                 }`}

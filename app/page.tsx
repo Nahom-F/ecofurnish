@@ -11,6 +11,15 @@ import Newsletter from "@/components/home/Newsletter";
 import AdBanner from "@/components/home/AdBanner";
 import { CatalogView } from "@/components/catalog-view";
 
+// This page makes no calls to headers()/cookies(), so Next statically
+// generates it once at build time and serves that same HTML from Vercel's
+// cache indefinitely (independent of the database, and shared across every
+// visitor — not per-browser). revalidate here re-generates it on the first
+// request after each window elapses, and submitReview() also calls
+// revalidatePath("/") so a real in-app review submission busts this
+// instantly rather than waiting out the window.
+export const revalidate = 300;
+
 export default async function Home() {
   const rawCatalog = await db.select().from(products);
   const catalog = await attachRatings(rawCatalog);

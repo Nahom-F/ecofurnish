@@ -117,4 +117,5 @@ export async function submitReview(productId: string, rating: number, comment: s
   }
 
   revalidatePath(`/products/${productId}`);
+  revalidatePath("/");
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -37,10 +38,32 @@ const MOBILE_ORDER = ["Home", "Shop", "Collections", "About", "Contact"];
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   const items = [...navigation].sort(
     (a, b) => MOBILE_ORDER.indexOf(a.title) - MOBILE_ORDER.indexOf(b.title)
   );
+
+  // Same fix as MobileBottomNav: Shop ("/#all-products") and Collections
+  // ("/#categories") share a pathname with Home ("/"). Next's Link only
+  // does a real navigation when the pathname itself changes, so tapping
+  // one of these while already on "/" can silently no-op instead of
+  // scrolling. Handle that case manually; let Link handle real page changes.
+  const handleItemClick = (e: React.MouseEvent, href: string) => {
+    setOpen(false);
+    const [path, hash] = href.split("#");
+    const targetPath = path || "/";
+    if (pathname !== targetPath) return; // real navigation — let Link handle it
+
+    e.preventDefault();
+    if (hash) {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.replaceState(null, "", `${targetPath}#${hash}`);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.history.replaceState(null, "", targetPath);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -72,7 +95,7 @@ export default function MobileNav() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    onClick={() => setOpen(false)}
+                    onClick={(e) => handleItemClick(e, item.href)}
                     className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
                   >
                     <Icon className="h-5 w-5 text-emerald-700" />
