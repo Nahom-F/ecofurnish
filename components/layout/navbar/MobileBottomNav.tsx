@@ -29,28 +29,38 @@ export default function MobileBottomNav() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  // Home and Categories both live at "/" — only the hash tells them apart,
-  // and usePathname() doesn't include it, so it's tracked separately here.
-  const [hash, setHash] = useState('')
+  // Home and Categories both live at "/" — only which section is actually
+  // in view tells them apart. Tried tracking window.location.hash directly
+  // first, but Next.js Link's same-page hash navigation doesn't reliably
+  // fire a native hashchange event, so this watches the #all-products
+  // section's real scroll position instead — also just a better match for
+  // "which tab am I on" than the URL fragment alone.
+  const [categoriesInView, setCategoriesInView] = useState(false)
   useEffect(() => {
-    setHash(window.location.hash)
-    const onHashChange = () => setHash(window.location.hash)
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
+    if (pathname !== '/') return
+    const el = document.getElementById('all-products')
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setCategoriesInView(entry.isIntersecting),
+      { rootMargin: '-40% 0px -40% 0px' } // "in view" once roughly centered on screen
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [pathname])
 
   const tabs: Tab[] = [
     {
       href: '/',
       label: 'Home',
       icon: Home,
-      isActive: (p) => p === '/' && hash !== '#all-products',
+      isActive: (p) => p === '/' && !categoriesInView,
     },
     {
       href: '/#all-products',
       label: 'Categories',
       icon: LayoutGrid,
-      isActive: (p) => p === '/' && hash === '#all-products',
+      isActive: (p) => p === '/' && categoriesInView,
     },
     {
       href: '/wishlist',

@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 import {
   sendVerificationEmail,
+  sendWelcomeEmail,
   sendDeleteAccountEmail,
   sendResetPasswordEmail,
   sendPasswordChangedEmail,
@@ -60,6 +61,18 @@ export const auth = betterAuth({
     },
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
+    // Fires exactly once, right when the email link is actually clicked —
+    // this used to fire from the sign-up form's onSuccess instead, which
+    // only means the sign-up *request* succeeded, not that the account is
+    // actually usable yet (sign-in stays blocked until this point, per
+    // requireEmailVerification above). That mismatch was also why a
+    // repeat attempt with an already-registered, still-unverified email
+    // could resend a "your account is ready" email without ever sending a
+    // fresh verification link — this callback only ever fires on genuine
+    // verification, so that can't happen anymore.
+    afterEmailVerification: async (user) => {
+      await sendWelcomeEmail(user.email, user.name ?? "there");
+    },
   },
   // Better Auth rate-limits auth routes by default in production, but its
   // default storage is in-memory — on a serverless host (Vercel) each

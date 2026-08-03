@@ -4,6 +4,32 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+/** Normalizes a product's `rooms` value defensively. Expected shape is a
+ * real string[], but this also handles a raw Postgres array literal
+ * (e.g. `{Living Room,Bedroom}`, in case one ever arrives unparsed) or a
+ * JSON string, and trims whitespace on each entry. Falls back to []
+ * rather than throwing, so one malformed row can't break the whole page. */
+function normalizeRooms(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((r) => String(r).trim()).filter(Boolean);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      return trimmed
+        .slice(1, -1)
+        .split(",")
+        .map((r) => r.replace(/^"|"$/g, "").trim())
+        .filter(Boolean);
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map((r) => String(r).trim()).filter(Boolean);
+    } catch {
+      // Not JSON either — fall through to the empty-array default below.
+    }
+  }
+  return [];
+}
 import {
   Select,
   SelectContent,
@@ -53,15 +79,26 @@ export function CatalogView({ products }: { products: Product[] }) {
     [products]
   );
 
-  const rooms = useMemo(
-    () => Array.from(new Set(products.flatMap((p) => p.rooms))).sort(),
-    [products]
-  );
+  const rooms = useMemo(() => {
+    // Case-insensitive dedup — some rows were tagged with inconsistent
+    // casing ("Living room" vs "Living Room") from manual DB edits;
+    // this keeps them from showing as two separate confusing entries.
+    const seen = new Map<string, string>();
+    for (const p of products) {
+      for (const r of normalizeRooms(p.rooms)) {
+        const key = r.toLowerCase();
+        if (!seen.has(key)) seen.set(key, r);
+      }
+    }
+    return Array.from(seen.values()).sort();
+  }, [products]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const matchesCategory = category === "all" || p.category === category;
-      const matchesRoom = room === "all" || p.rooms.includes(room);
+      const matchesRoom =
+        room === "all" ||
+        normalizeRooms(p.rooms).some((r) => r.toLowerCase() === room.toLowerCase());
       const matchesSearch =
         search.trim() === "" ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||

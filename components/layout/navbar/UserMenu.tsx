@@ -74,23 +74,27 @@ export default function UserMenu() {
           />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem render={<Link href="/account" />}>
-            <UserCog className="h-4 w-4" />
+          <DropdownMenuItem className="text-base" render={<Link href="/account" />}>
+            <UserCog className="h-4.5 w-4.5" />
             Account
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/account/orders" />}>
-            <PackageSearch className="h-4 w-4" />
+          <DropdownMenuItem className="text-base" render={<Link href="/account/orders" />}>
+            <PackageSearch className="h-4.5 w-4.5" />
             Order history
           </DropdownMenuItem>
           {isAdmin && (
-            <DropdownMenuItem render={<Link href="/admin" />}>
-              <ShieldCheck className="h-4 w-4" />
+            <DropdownMenuItem className="text-base" render={<Link href="/admin" />}>
+              <ShieldCheck className="h-4.5 w-4.5" />
               Admin dashboard
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setConfirmOpen(true)} variant="destructive">
-            <LogOut className="h-4 w-4" />
+          <DropdownMenuItem
+            className="text-base"
+            onClick={() => setConfirmOpen(true)}
+            variant="destructive"
+          >
+            <LogOut className="h-4.5 w-4.5" />
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

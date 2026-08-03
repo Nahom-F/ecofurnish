@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 import { Label } from "@/components/ui/label";
-import { signUp } from "@/lib/auth-client";
+import { signUp, sendVerificationEmail } from "@/lib/auth-client";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { passesAllChecks } from "@/lib/password-strength";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { verifyCaptcha } from "@/app/actions/captcha";
-import { notifySignedUp } from "@/app/actions/welcome";
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
@@ -20,6 +19,8 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   const passwordValid = passesAllChecks(password);
 
@@ -53,7 +54,7 @@ export default function SignUpPage() {
       { name, email, password },
       {
         onSuccess: () => {
-          notifySignedUp(email, name);
+          setSubmittedEmail(email);
           setAwaitingVerification(true);
           setLoading(false);
         },
@@ -66,6 +67,17 @@ export default function SignUpPage() {
   }
 
   if (awaitingVerification) {
+    async function handleResend() {
+      setResendState("sending");
+      await sendVerificationEmail(
+        { email: submittedEmail, callbackURL: "/" },
+        {
+          onSuccess: () => setResendState("sent"),
+          onError: () => setResendState("idle"),
+        }
+      );
+    }
+
     return (
       <div className="container mx-auto flex max-w-sm flex-col justify-center px-4 py-24 text-center">
         <h1 className="text-2xl font-bold tracking-tight">Check your email</h1>
@@ -76,6 +88,18 @@ export default function SignUpPage() {
         <Button className="mt-6" render={<Link href="/sign-in" />} nativeButton={false}>
           Go to sign in
         </Button>
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resendState !== "idle"}
+          className="mt-4 text-sm font-medium text-foreground hover:underline disabled:no-underline disabled:text-muted-foreground"
+        >
+          {resendState === "sent"
+            ? "Sent — check your inbox"
+            : resendState === "sending"
+              ? "Sending…"
+              : "Link expired or never arrived? Send a new one"}
+        </button>
       </div>
     );
   }

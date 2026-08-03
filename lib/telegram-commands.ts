@@ -2,7 +2,7 @@ import { asc } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { computeDailyDigest, formatDigestAsText } from "@/lib/insights";
-import { narrateDigest } from "@/lib/gemini";
+import { narrateDigest, chatReply } from "@/lib/gemini";
 
 /** "/stock" — every product's current stock, lowest first (most actionable first). */
 export async function buildStockReply(): Promise<string> {
@@ -54,8 +54,13 @@ export async function handleCommand(text: string): Promise<string> {
       case "/start":
       case "/help":
         return buildHelpReply();
-      default:
-        return `Didn't recognize that one.\n\n${buildHelpReply()}`;
+      default: {
+        // Not a slash command — treat it as a normal question. Falls back
+        // to the help text if Gemini isn't configured or the call fails,
+        // so the bot still answers *something* either way.
+        const reply = await chatReply(text);
+        return reply ?? `Didn't catch that.\n\n${buildHelpReply()}`;
+      }
     }
   } catch (err) {
     console.error("Telegram command failed:", command, err);
