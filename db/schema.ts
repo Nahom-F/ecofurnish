@@ -1,4 +1,4 @@
-import { pgTable, text, numeric, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, numeric, integer, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const products = pgTable("products", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -131,15 +131,27 @@ export const referrals = pgTable("referrals", {
 // for discount_code / free_shipping types; `creditAmount` is the balance
 // for store_credit (and is decremented as it's spent, rather than being
 // all-or-nothing against a single order).
-export const referralRewards = pgTable("referral_rewards", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id").notNull(),
-  type: text("type").notNull(), // "discount_code" | "store_credit" | "free_shipping"
-  milestone: integer("milestone").notNull(), // 5, 15, or 30 — which tier earned this
-  code: text("code").unique(), // set for discount_code / free_shipping
-  percentOff: integer("percent_off"), // set for discount_code
-  creditAmount: numeric("credit_amount", { precision: 10, scale: 2 }), // set for store_credit / free_shipping
-  redeemed: boolean("redeemed").default(false).notNull(),
-  redeemedAt: timestamp("redeemed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const referralRewards = pgTable(
+  "referral_rewards",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").notNull(),
+    type: text("type").notNull(), // "discount_code" | "store_credit" | "free_shipping"
+    milestone: integer("milestone").notNull(), // 5, 15, or 30 — which tier earned this
+    code: text("code").unique(), // set for discount_code / free_shipping
+    percentOff: integer("percent_off"), // set for discount_code
+    creditAmount: numeric("credit_amount", { precision: 10, scale: 2 }), // set for store_credit / free_shipping
+    redeemed: boolean("redeemed").default(false).notNull(),
+    redeemedAt: timestamp("redeemed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    // The application already checks-then-inserts before issuing a reward,
+    // but that check and that insert aren't atomic — two referrals
+    // qualifying in the same instant could both pass the check before
+    // either insert lands. This constraint is what actually stops the
+    // second one; qualifyReferralIfFirstPurchase in lib/referrals.ts
+    // treats hitting it as "already issued" rather than an error.
+    uniqueIndex("referral_rewards_user_milestone_idx").on(table.userId, table.milestone),
+  ]
+);

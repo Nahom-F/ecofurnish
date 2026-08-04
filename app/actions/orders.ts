@@ -1,13 +1,14 @@
 "use server";
 
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { orders, orderItems, products } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { initializeChapaTransaction, verifyChapaTransaction } from "@/lib/chapa";
 import { sendOrderConfirmationEmail, sendLowStockAlertEmail } from "@/lib/email";
 import { applyReferralRewards, qualifyReferralIfFirstPurchase } from "@/lib/referrals";
+import { getEffectivePrice } from "@/lib/pricing";
 
 interface PlaceOrderInput {
   customerName: string;
@@ -16,6 +17,9 @@ interface PlaceOrderInput {
   shippingAddress: string;
   city: string;
   notes?: string;
+  // price is intentionally NOT trusted from here — see the re-pricing
+  // block below. It's only accepted in the input type because the cart
+  // (a client-side context) naturally carries one; it's never read.
   items: { productId: string; name: string; price: string; quantity: number }[];
   // A referral reward code the customer typed in at checkout, and/or a
   // flag to auto-apply any store credit they've earned from referrals.
@@ -32,6 +36,11 @@ export async function createOrder(input: PlaceOrderInput) {
   if (input.items.length === 0) {
     return { success: false as const, error: "Your cart is empty." };
   }
+  for (const item of input.items) {
+    if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+      return { success: false as const, error: "Invalid item quantity." };
+    }
+  }
 
   const session = await auth.api.getSession({ headers: await headers() });
   // The checkout page already gates this in the UI, but that's only a
@@ -42,10 +51,33 @@ export async function createOrder(input: PlaceOrderInput) {
   }
   const userId = session.user.id;
 
-  const subtotal = input.items.reduce(
-    (sum, item) => sum + parseFloat(item.price) * item.quantity,
-    0
-  );
+  // Re-price every line from the database rather than trusting whatever
+  // the client sent. The cart is a client-side context, so its prices —
+  // and the subtotal built from them — are just as spoofable as any other
+  // form input, and this total is what Chapa is actually told to charge.
+  // A cart price is only ever a snapshot for display; this re-fetch is the
+  // one place that price becomes real money.
+  const productIds = [...new Set(input.items.map((i) => i.productId))];
+  const dbProducts = await db.select().from(products).where(inArray(products.id, productIds));
+  const productById = new Map(dbProducts.map((p) => [p.id, p]));
+
+  const pricedItems: { orderId: string; productId: string; productName: string; unitPrice: string; quantity: number }[] = [];
+  let subtotal = 0;
+  for (const item of input.items) {
+    const product = productById.get(item.productId);
+    if (!product) {
+      return { success: false as const, error: "One of the items in your cart is no longer available." };
+    }
+    const unitPrice = getEffectivePrice(product);
+    subtotal += parseFloat(unitPrice) * item.quantity;
+    pricedItems.push({
+      orderId: "", // filled in once the order row exists, below
+      productId: product.id,
+      productName: product.name,
+      unitPrice,
+      quantity: item.quantity,
+    });
+  }
 
   let discountAmount = "0.00";
   let discountNote: string | null = null;
@@ -76,13 +108,7 @@ export async function createOrder(input: PlaceOrderInput) {
     .returning();
 
   await db.insert(orderItems).values(
-    input.items.map((item) => ({
-      orderId: order.id,
-      productId: item.productId,
-      productName: item.name,
-      unitPrice: item.price,
-      quantity: item.quantity,
-    }))
+    pricedItems.map((item) => ({ ...item, orderId: order.id }))
   );
 
   return { success: true as const, orderId: order.id };

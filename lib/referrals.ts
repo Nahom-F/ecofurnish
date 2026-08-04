@@ -117,7 +117,12 @@ export async function qualifyReferralIfFirstPurchase(userId: string) {
   const milestone = MILESTONES.find((m) => m.count === qualifiedCount);
   if (!milestone) return;
 
-  // Belt-and-suspenders against double-issuing the same tier.
+  // Fast-path check — avoids a wasted insert attempt in the common case,
+  // but isn't what actually prevents a double-issue: two referrals
+  // qualifying in the same instant could both pass this check before
+  // either insert lands. referral_rewards_user_milestone_idx (a real
+  // unique constraint on userId+milestone, see db/schema.ts) is what
+  // actually enforces it — the catch below is the real guard.
   const [already] = await db
     .select()
     .from(referralRewards)
@@ -130,23 +135,40 @@ export async function qualifyReferralIfFirstPurchase(userId: string) {
     .limit(1);
   if (already) return;
 
-  if (milestone.type === "discount_code") {
-    await db.insert(referralRewards).values({
-      userId: referral.referrerId,
-      type: "discount_code",
-      milestone: milestone.count,
-      code: randomCode(8),
-      percentOff: milestone.percentOff,
-    });
-  } else {
-    await db.insert(referralRewards).values({
-      userId: referral.referrerId,
-      type: milestone.type,
-      milestone: milestone.count,
-      code: milestone.type === "free_shipping" ? randomCode(8) : null,
-      creditAmount: milestone.creditAmount,
-    });
+  try {
+    if (milestone.type === "discount_code") {
+      await db.insert(referralRewards).values({
+        userId: referral.referrerId,
+        type: "discount_code",
+        milestone: milestone.count,
+        code: randomCode(8),
+        percentOff: milestone.percentOff,
+      });
+    } else {
+      await db.insert(referralRewards).values({
+        userId: referral.referrerId,
+        type: milestone.type,
+        milestone: milestone.count,
+        code: milestone.type === "free_shipping" ? randomCode(8) : null,
+        creditAmount: milestone.creditAmount,
+      });
+    }
+  } catch (err) {
+    // 23505 = unique_violation. The other concurrent qualification won
+    // the race and already inserted this tier's reward — that's the
+    // expected/correct outcome here, not a real error, so swallow it
+    // rather than letting it bubble up and break payment confirmation.
+    if (!isUniqueViolation(err)) throw err;
   }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
 }
 
 export interface ReferralStats {
