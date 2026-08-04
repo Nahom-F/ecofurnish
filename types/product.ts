@@ -11,6 +11,8 @@ export interface Product {
   rooms: string[];
   stock: number;
   plasticWeightKg: string;
+  discountPercent?: number | null;
+  discountReason?: string | null;
   // Only present where the fetching page ran attachRatings() (see
   // lib/reviews.ts) — optional so callers that don't need ratings (e.g.
   // the admin product form) aren't forced to supply them.

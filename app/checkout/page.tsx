@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/auth-client";
 import { createOrder, createCheckoutSession } from "@/app/actions/orders";
+import { fetchAvailableCredit } from "@/app/actions/referrals";
 import { toast } from "sonner";
 
 export default function CheckoutPage() {
@@ -21,6 +23,23 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "1";
   const [submitting, setSubmitting] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [availableCredit, setAvailableCredit] = useState(0);
+  const [useStoreCredit, setUseStoreCredit] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    fetchAvailableCredit()
+      .then((amount) => setAvailableCredit(parseFloat(amount)))
+      .catch(() => setAvailableCredit(0));
+  }, [session?.user]);
+
+  const subtotalNum = subtotal;
+  // Rough client-side estimate for display only — the real, authoritative
+  // discount (including any promo code) is computed server-side in
+  // createOrder, so this is just to avoid the summary looking stale.
+  const creditToApply = useStoreCredit ? Math.min(availableCredit, subtotalNum) : 0;
+  const estimatedTotal = Math.max(0, subtotalNum - creditToApply).toFixed(2);
 
   if (items.length === 0) {
     return (
@@ -76,6 +95,8 @@ export default function CheckoutPage() {
           price: i.price,
           quantity: i.quantity,
         })),
+        promoCode: promoCode.trim() || undefined,
+        useStoreCredit,
       });
 
       if (!orderResult.success) {
@@ -143,6 +164,32 @@ export default function CheckoutPage() {
             <Textarea id="notes" name="notes" placeholder="Gate code, landmark, preferred time…" />
           </div>
 
+          <div className="space-y-3 rounded-lg border border-emerald-700/30 bg-emerald-700/5 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-800">
+              <Gift className="h-4 w-4" />
+              Referral rewards
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="promoCode">Referral code (optional)</Label>
+              <Input
+                id="promoCode"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder="e.g. AB3D9FQ2"
+                className="uppercase"
+              />
+            </div>
+            {availableCredit > 0 && (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={useStoreCredit}
+                  onCheckedChange={(checked) => setUseStoreCredit(checked === true)}
+                />
+                Apply my store credit ({formatPrice(availableCredit.toFixed(2), "ETB")} available)
+              </label>
+            )}
+          </div>
+
           <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
             You&apos;ll complete payment on Chapa&apos;s secure checkout page next —
             card, mobile money, or bank transfer, charged in ETB. This is
@@ -151,7 +198,7 @@ export default function CheckoutPage() {
 
           <Button type="submit" size="lg" className="w-full" disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {submitting ? "Preparing checkout…" : `Continue to Payment — ${formatPrice(subtotal, "ETB")}`}
+            {submitting ? "Preparing checkout…" : `Continue to Payment — ${formatPrice(estimatedTotal, "ETB")}`}
           </Button>
         </form>
 
@@ -169,17 +216,28 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+          {creditToApply > 0 && (
+            <div className="mt-3 flex justify-between text-sm text-emerald-700">
+              <span>Store credit applied</span>
+              <span>−{formatPrice(creditToApply.toFixed(2), "ETB")}</span>
+            </div>
+          )}
           <div className="mt-4 flex justify-between border-t border-border/60 pt-4 font-semibold">
             <span>Total</span>
             <div className="text-right">
-              <span className="text-primary">{formatPrice(subtotal, "ETB")}</span>
+              <span className="text-primary">{formatPrice(estimatedTotal, "ETB")}</span>
               {preferredCurrency !== "ETB" && (
                 <p className="text-xs font-normal text-muted-foreground">
-                  ≈ {formatPrice(subtotal, preferredCurrency)}
+                  ≈ {formatPrice(estimatedTotal, preferredCurrency)}
                 </p>
               )}
             </div>
           </div>
+          {promoCode.trim() && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Referral code discount is verified and applied when you continue to payment.
+            </p>
+          )}
         </div>
       </div>
     </div>

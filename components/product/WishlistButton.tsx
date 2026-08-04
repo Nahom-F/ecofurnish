@@ -3,6 +3,7 @@
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
 import { Product } from "@/types/product";
+import { getEffectivePrice } from "@/lib/pricing";
 
 export default function WishlistButton({ product }: { product: Product }) {
   const { isWishlisted, toggleItem } = useWishlist();
@@ -19,7 +20,7 @@ export default function WishlistButton({ product }: { product: Product }) {
         toggleItem({
           productId: product.id,
           name: product.name,
-          price: product.price,
+          price: getEffectivePrice(product),
           imageUrl: product.imageUrl,
         });
       }}

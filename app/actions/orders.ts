@@ -7,6 +7,7 @@ import { orders, orderItems, products } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { initializeChapaTransaction, verifyChapaTransaction } from "@/lib/chapa";
 import { sendOrderConfirmationEmail, sendLowStockAlertEmail } from "@/lib/email";
+import { applyReferralRewards, qualifyReferralIfFirstPurchase } from "@/lib/referrals";
 
 interface PlaceOrderInput {
   customerName: string;
@@ -16,6 +17,10 @@ interface PlaceOrderInput {
   city: string;
   notes?: string;
   items: { productId: string; name: string; price: string; quantity: number }[];
+  // A referral reward code the customer typed in at checkout, and/or a
+  // flag to auto-apply any store credit they've earned from referrals.
+  promoCode?: string;
+  useStoreCredit?: boolean;
 }
 
 /**
@@ -37,9 +42,22 @@ export async function createOrder(input: PlaceOrderInput) {
   }
   const userId = session.user.id;
 
-  const totalAmount = input.items
-    .reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0)
-    .toFixed(2);
+  const subtotal = input.items.reduce(
+    (sum, item) => sum + parseFloat(item.price) * item.quantity,
+    0
+  );
+
+  let discountAmount = "0.00";
+  let discountNote: string | null = null;
+  if (input.promoCode || input.useStoreCredit) {
+    const result = await applyReferralRewards(userId, subtotal, {
+      promoCode: input.promoCode,
+      useStoreCredit: input.useStoreCredit,
+    });
+    discountAmount = result.discountAmount;
+    discountNote = result.note;
+  }
+  const totalAmount = Math.max(0, subtotal - parseFloat(discountAmount)).toFixed(2);
 
   const [order] = await db
     .insert(orders)
@@ -52,6 +70,8 @@ export async function createOrder(input: PlaceOrderInput) {
       city: input.city,
       notes: input.notes,
       totalAmount,
+      discountAmount,
+      discountNote,
     })
     .returning();
 
@@ -151,6 +171,12 @@ export async function confirmPayment(orderId: string, txRef: string) {
     .update(orders)
     .set({ paymentStatus: "paid", status: "processing" })
     .where(eq(orders.id, orderId));
+
+  // orders.userId can be null on legacy/guest orders — nothing to
+  // qualify in that case.
+  if (order.userId) {
+    await qualifyReferralIfFirstPurchase(order.userId);
+  }
 
   await sendOrderConfirmationEmail({
     toEmail: order.customerEmail,

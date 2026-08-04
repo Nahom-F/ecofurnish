@@ -1,5 +1,6 @@
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { getEffectivePrice, hasActiveDiscount } from "@/lib/pricing";
 import { Product } from "@/types/product";
 import ProductRating from "./ProductRating";
 
@@ -10,6 +11,8 @@ export default function ProductInfo({
   product: Product;
   currency?: Currency;
 }) {
+  const discounted = hasActiveDiscount(product);
+
   return (
     <>
       <CardHeader className="p-3 pb-2 sm:p-4">
@@ -17,10 +20,26 @@ export default function ProductInfo({
           <CardTitle className="line-clamp-1 select-text text-base sm:text-lg">
             {product.name}
           </CardTitle>
-          <span className="whitespace-nowrap text-base font-bold text-primary sm:text-lg">
-            {formatPrice(product.price, currency)}
-          </span>
+          {discounted ? (
+            <div className="flex flex-col items-end whitespace-nowrap">
+              <span className="text-base font-bold text-primary sm:text-lg">
+                {formatPrice(getEffectivePrice(product), currency)}
+              </span>
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(product.price, currency)}
+              </span>
+            </div>
+          ) : (
+            <span className="whitespace-nowrap text-base font-bold text-primary sm:text-lg">
+              {formatPrice(product.price, currency)}
+            </span>
+          )}
         </div>
+        {discounted && (
+          <span className="mt-1 inline-block w-fit rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-semibold text-white">
+            {product.discountPercent}% off
+          </span>
+        )}
         {/* Only rendered once a product has at least one real review —
             no reviews yet reads as "new listing," not a fake 0-star. */}
         {product.avgRating != null && product.reviewCount ? (

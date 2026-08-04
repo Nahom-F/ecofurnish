@@ -4,6 +4,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { getEffectivePrice } from "@/lib/pricing";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
 import WishlistButton from "./WishlistButton";
@@ -13,12 +14,12 @@ export default function ProductActions({ product }: { product: Product }) {
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
-    e.stopPropagation(); // Stops the parent click event[cite: 10]
-    
+    e.stopPropagation(); // Stops the parent click event
+
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
+      price: getEffectivePrice(product),
       imageUrl: product.imageUrl,
       stock: product.stock,
     });

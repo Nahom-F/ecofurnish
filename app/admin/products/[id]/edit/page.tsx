@@ -27,6 +27,8 @@ export default async function EditProductPage({ params }: Props) {
           rooms: product.rooms,
           stock: product.stock,
           plasticWeightKg: product.plasticWeightKg,
+          discountPercent: product.discountPercent,
+          discountReason: product.discountReason ?? "",
         }}
       />
     </div>

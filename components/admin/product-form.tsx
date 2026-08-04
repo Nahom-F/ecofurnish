@@ -26,6 +26,8 @@ const emptyProduct: ProductInput = {
   rooms: [],
   stock: 0,
   plasticWeightKg: "0.00",
+  discountPercent: 0,
+  discountReason: "",
 };
 
 export function ProductForm({ productId, initial }: ProductFormProps) {
@@ -154,6 +156,36 @@ export function ProductForm({ productId, initial }: ProductFormProps) {
           A path under <code>/public</code> — drop new images into{" "}
           <code>public/products/</code> first.
         </p>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-emerald-700/30 bg-emerald-700/5 p-4">
+        <Label>Discount</Label>
+        <p className="text-xs text-muted-foreground">
+          Leave at 0% for no discount. Runs until you change it back — there&apos;s no
+          automatic expiry.
+        </p>
+        <div className="grid grid-cols-2 gap-4 pt-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="discountPercent">Discount %</Label>
+            <Input
+              id="discountPercent"
+              type="number"
+              min={0}
+              max={99}
+              value={values.discountPercent}
+              onChange={(e) => update("discountPercent", Number(e.target.value))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="discountReason">Reason (shown to customers)</Label>
+            <Input
+              id="discountReason"
+              value={values.discountReason}
+              onChange={(e) => update("discountReason", e.target.value)}
+              placeholder="Launch week discount"
+            />
+          </div>
+        </div>
       </div>
 
       <Button type="submit" disabled={submitting}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Leaf, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { getEffectivePrice, hasActiveDiscount } from "@/lib/pricing";
 import { Product } from "@/types/product";
 
 export default function ProductHoverDetail({
@@ -11,6 +12,8 @@ export default function ProductHoverDetail({
   product: Product;
   currency: Currency;
 }) {
+  const discounted = hasActiveDiscount(product);
+
   return (
     <div
       className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-30 origin-top animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 rounded-xl border border-border bg-card p-4 text-sm shadow-2xl duration-150"
@@ -21,9 +24,20 @@ export default function ProductHoverDetail({
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-heading text-base leading-snug font-medium">{product.name}</h3>
-        <span className="whitespace-nowrap text-lg font-bold text-primary">
-          {formatPrice(product.price, currency)}
-        </span>
+        {discounted ? (
+          <div className="flex flex-col items-end whitespace-nowrap">
+            <span className="text-lg font-bold text-primary">
+              {formatPrice(getEffectivePrice(product), currency)}
+            </span>
+            <span className="text-xs text-muted-foreground line-through">
+              {formatPrice(product.price, currency)}
+            </span>
+          </div>
+        ) : (
+          <span className="whitespace-nowrap text-lg font-bold text-primary">
+            {formatPrice(product.price, currency)}
+          </span>
+        )}
       </div>
 
       {product.avgRating != null && product.reviewCount ? (

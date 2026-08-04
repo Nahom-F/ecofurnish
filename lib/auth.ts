@@ -7,6 +7,7 @@ import {
   sendResetPasswordEmail,
   sendPasswordChangedEmail,
 } from "@/lib/email";
+import { attributeReferral } from "@/lib/referrals";
 
 // Set up the database connection pool using your environment variable
 const pool = new Pool({
@@ -72,6 +73,11 @@ export const auth = betterAuth({
     // verification, so that can't happen anymore.
     afterEmailVerification: async (user) => {
       await sendWelcomeEmail(user.email, user.name ?? "there");
+      // Attribution happens here, not at raw signup — this only fires once
+      // the account is genuinely real (sign-in stays blocked until this
+      // point), so an abandoned/never-verified signup can't earn anyone a
+      // referral credit.
+      await attributeReferral(user.id);
     },
   },
   // Better Auth rate-limits auth routes by default in production, but its

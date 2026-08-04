@@ -16,6 +16,8 @@ export interface ProductInput {
   rooms: string[];
   stock: number;
   plasticWeightKg: string;
+  discountPercent: number;
+  discountReason: string;
 }
 
 export async function createProduct(input: ProductInput) {

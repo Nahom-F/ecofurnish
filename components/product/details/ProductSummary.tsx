@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Product } from "@/types/product";
 import { useCart } from "@/lib/cart-context";
 import { useCurrency } from "@/lib/currency-context";
+import { getEffectivePrice } from "@/lib/pricing";
 import ProductMeta from "./ProductMeta";
 import QuantitySelector from "./QuantitySelector";
 import AddToCartButton from "../AddToCartButton";
@@ -25,7 +26,7 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
       {
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: getEffectivePrice(product),
         imageUrl: product.imageUrl,
         stock: product.stock,
       },
@@ -48,6 +49,8 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
         currency={currency}
         avgRating={product.avgRating}
         reviewCount={product.reviewCount}
+        discountPercent={product.discountPercent}
+        discountReason={product.discountReason}
       />
 
       <p className="text-muted-foreground">

@@ -7,12 +7,26 @@ interface ProductMetaProps {
   currency?: Currency;
   avgRating?: number | null;
   reviewCount?: number;
+  discountPercent?: number | null;
+  discountReason?: string | null;
 }
 
-export default function ProductMeta({ price, currency = "ETB", avgRating, reviewCount }: ProductMetaProps) {
+export default function ProductMeta({
+  price,
+  currency = "ETB",
+  avgRating,
+  reviewCount,
+  discountPercent,
+  discountReason,
+}: ProductMetaProps) {
   return (
     <div className="space-y-4">
-      <ProductPrice price={price} currency={currency} />
+      <ProductPrice
+        price={price}
+        currency={currency}
+        discountPercent={discountPercent}
+        discountReason={discountReason}
+      />
       {avgRating != null && reviewCount ? (
         <ProductRating rating={avgRating} count={reviewCount} />
       ) : null}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, PackageSearch, ShieldCheck, LogOut, UserCog } from "lucide-react";
+import { User, PackageSearch, ShieldCheck, LogOut, UserCog, Gift } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +96,18 @@ export default function UserMenu() {
             <span className="flex flex-col gap-0.5 pt-0.5">
               <span className="text-sm font-semibold text-foreground">Order history</span>
               <span className="text-xs text-muted-foreground">View your past orders</span>
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="items-start gap-3 rounded-xl px-2 py-2.5"
+            render={<Link href="/account/referrals" />}
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700/10 text-emerald-700">
+              <Gift className="h-4.5 w-4.5" />
+            </span>
+            <span className="flex flex-col gap-0.5 pt-0.5">
+              <span className="text-sm font-semibold text-foreground">Invite friends</span>
+              <span className="text-xs text-muted-foreground">Earn rewards for referrals</span>
             </span>
           </DropdownMenuItem>
           {isAdmin && (

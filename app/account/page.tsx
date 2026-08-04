@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { PackageSearch, ShieldCheck } from "lucide-react";
+import { Gift, PackageSearch, ShieldCheck } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { ProfileForm } from "@/components/account/profile-form";
 import { PasswordForm } from "@/components/account/password-form";
@@ -27,6 +27,13 @@ export default async function AccountPage() {
         >
           <PackageSearch className="h-4 w-4 text-primary" />
           Order history
+        </Link>
+        <Link
+          href="/account/referrals"
+          className="flex flex-1 items-center gap-2 rounded-lg border border-border/60 p-4 text-sm font-medium transition-colors hover:bg-muted/30"
+        >
+          <Gift className="h-4 w-4 text-primary" />
+          Invite friends
         </Link>
         {isAdmin && (
           <Link
