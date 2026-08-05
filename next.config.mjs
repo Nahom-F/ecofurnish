@@ -7,6 +7,12 @@ const nextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        // Vercel Blob — each store gets its own subdomain, hence the wildcard.
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

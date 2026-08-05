@@ -1,42 +1,35 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { Loader2, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CATEGORIES } from "@/data/categories";
-import { createProduct, updateProduct, type ProductInput } from "@/app/admin/actions";
+import {
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+  type ProductInput,
+} from "@/app/admin/actions";
 import { toast } from "sonner";
 
 interface ProductFormProps {
   productId?: string;
   initial?: ProductInput;
-  // Distinct category values already in use, for the dropdown — keeps a
-  // new product landing in the same bucket as existing ones instead of a
-  // typo splintering off a near-duplicate category (e.g. "Seating" vs
-  // "seating"). "__new__" is a sentinel for "type a brand new one".
-  existingCategories: string[];
+  existingCategories?: string[];
 }
-
-const NEW_CATEGORY = "__new__";
 
 const emptyProduct: ProductInput = {
   name: "",
   description: "",
   price: "0.00",
-  imageUrl: "",
-  category: "",
+  imageUrl: "/placeholder.jpg",
+  category: "Other",
   rooms: [],
   stock: 0,
   plasticWeightKg: "0.00",
@@ -44,18 +37,12 @@ const emptyProduct: ProductInput = {
   discountReason: "",
 };
 
-export function ProductForm({ productId, initial, existingCategories }: ProductFormProps) {
+export function ProductForm({ productId, initial, existingCategories = [] }: ProductFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<ProductInput>(initial ?? emptyProduct);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  // Whether the category field is in "type a new one" mode — starts true
-  // if we're creating fresh, or editing a product whose category isn't
-  // (yet) in the known list.
-  const [addingCategory, setAddingCategory] = useState(
-    !!values.category && !existingCategories.includes(values.category)
-  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
@@ -72,33 +59,33 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadError(null);
+
+    // Instant local preview while the real upload is still in flight —
+    // swapped for the real blob URL once that resolves below.
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
     setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed.");
-      update("imageUrl", data.url);
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setUploading(false);
+
+    const formData = new FormData();
+    formData.set("file", file);
+    const result = await uploadProductImage(formData);
+
+    setUploading(false);
+    URL.revokeObjectURL(objectUrl);
+
+    if (!result.success) {
+      setPreviewUrl(null);
+      toast.error(result.error);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
+
+    update("imageUrl", result.url);
+    setPreviewUrl(null); // now shown via values.imageUrl itself instead
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!values.imageUrl) {
-      toast.error("Please add a product photo first.");
-      return;
-    }
-    if (!values.category.trim()) {
-      toast.error("Please choose or type a category.");
-      return;
-    }
     setSubmitting(true);
     try {
       if (productId) {
@@ -123,7 +110,7 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="description">Detail / description</Label>
+        <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           value={values.description}
@@ -143,7 +130,7 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="stock">Stock (how many you have)</Label>
+          <Label htmlFor="stock">Stock</Label>
           <Input
             id="stock"
             type="number"
@@ -157,53 +144,19 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="category">Category (what it is — table, seating…)</Label>
-          {addingCategory ? (
-            <div className="flex gap-2">
-              <Input
-                id="category"
-                required
-                autoFocus
-                value={values.category}
-                onChange={(e) => update("category", e.target.value)}
-                placeholder="e.g. Seating"
-              />
-              {existingCategories.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAddingCategory(false)}
-                >
-                  Cancel
-                </Button>
-              )}
-            </div>
-          ) : (
-            <Select
-              value={values.category || undefined}
-              onValueChange={(v) => {
-                if (v === NEW_CATEGORY) {
-                  update("category", "");
-                  setAddingCategory(true);
-                } else if (v) {
-                  update("category", v);
-                }
-              }}
-            >
-              <SelectTrigger id="category" className="w-full">
-                <SelectValue placeholder="Choose a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {existingCategories.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-                <SelectItem value={NEW_CATEGORY}>+ Add new category…</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+          <Label htmlFor="category">Category</Label>
+          <Input
+            id="category"
+            required
+            list="existing-categories"
+            value={values.category}
+            onChange={(e) => update("category", e.target.value)}
+          />
+          <datalist id="existing-categories">
+            {existingCategories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="plasticWeightKg">Plastic diverted (kg)</Label>
@@ -235,28 +188,33 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
       </div>
 
       <div className="space-y-1.5">
-        <Label>Photo</Label>
+        <Label>Product image</Label>
         <div className="flex items-start gap-4">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/30">
-            {values.imageUrl ? (
-              // Plain <img>, not next/image — this is just an admin-form
-              // preview of whatever URL is currently set, which could be
-              // any host, so it isn't worth wiring through the image
-              // optimizer's domain allowlist.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={values.imageUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
+            {(previewUrl || values.imageUrl) && (
+              <Image
+                src={previewUrl || values.imageUrl}
+                alt=""
+                fill
+                unoptimized={!!previewUrl} // a blob: object URL, not a real remote image
+                className="object-cover"
+              />
+            )}
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
             )}
           </div>
           <div className="flex-1 space-y-2">
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleFileChange}
+              disabled={uploading}
               className="hidden"
-              id="photo-upload"
+              id="image-upload"
             />
             <Button
               type="button"
@@ -264,25 +222,16 @@ export function ProductForm({ productId, initial, existingCategories }: ProductF
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              {uploading ? "Uploading…" : "Upload photo"}
+              <ImagePlus className="h-4 w-4" />
+              {uploading ? "Uploading…" : values.imageUrl ? "Replace image" : "Upload image"}
             </Button>
-            {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
-            <div className="space-y-1">
-              <Label htmlFor="imageUrl" className="text-xs text-muted-foreground">
-                or paste an image URL
-              </Label>
-              <Input
-                id="imageUrl"
-                value={values.imageUrl}
-                onChange={(e) => update("imageUrl", e.target.value)}
-                placeholder="https://…"
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">JPEG, PNG, or WebP, up to 4MB.</p>
+            <Input
+              value={values.imageUrl}
+              onChange={(e) => update("imageUrl", e.target.value)}
+              placeholder="Or paste an image URL directly"
+              className="text-xs"
+            />
           </div>
         </div>
       </div>

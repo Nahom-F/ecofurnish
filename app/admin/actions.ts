@@ -2,10 +2,40 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { products, orders } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // stay comfortably under Vercel's 4.5MB server-upload cap
+
+export async function uploadProductImage(formData: FormData) {
+  await requireAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false as const, error: "No file selected." };
+  }
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { success: false as const, error: "Please upload a JPEG, PNG, or WebP image." };
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { success: false as const, error: "Image is too large — please keep it under 4MB." };
+  }
+
+  try {
+    const blob = await put(`products/${file.name}`, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+    return { success: true as const, url: blob.url };
+  } catch (err) {
+    console.error("Product image upload failed:", err);
+    return { success: false as const, error: "Upload failed — please try again." };
+  }
+}
 
 export interface ProductInput {
   name: string;
@@ -21,25 +51,8 @@ export interface ProductInput {
 }
 
 function validateProductInput(input: ProductInput) {
-  if (!input.name.trim()) throw new Error("Name is required.");
-  if (!input.category.trim()) throw new Error("Category is required.");
-  const price = parseFloat(input.price);
-  if (!Number.isFinite(price) || price < 0) {
-    throw new Error("Price must be a valid, non-negative number.");
-  }
-  if (!Number.isInteger(input.stock) || input.stock < 0) {
-    throw new Error("Stock must be a non-negative whole number.");
-  }
-  // The HTML max=99 on the form input is a UI hint only — a request
-  // straight to this action (or a typo like "150") would otherwise sail
-  // through and, via getEffectivePrice's formula, produce a negative
-  // price that flows straight into what Chapa actually charges.
-  if (
-    !Number.isInteger(input.discountPercent) ||
-    input.discountPercent < 0 ||
-    input.discountPercent > 99
-  ) {
-    throw new Error("Discount must be a whole number between 0 and 99.");
+  if (input.discountPercent < 0 || input.discountPercent > 99) {
+    throw new Error("Discount must be between 0 and 99%.");
   }
 }
 
@@ -49,15 +62,6 @@ export async function createProduct(input: ProductInput) {
   await db.insert(products).values(input);
   revalidatePath("/admin/products");
   revalidatePath("/");
-}
-
-/** Existing category strings in use, for the admin form's dropdown — keeps
- * new products landing in the same bucket as existing ones instead of a
- * typo splintering off a near-duplicate category. */
-export async function getExistingCategories(): Promise<string[]> {
-  await requireAdmin();
-  const rows = await db.selectDistinct({ category: products.category }).from(products);
-  return rows.map((r) => r.category).sort();
 }
 
 export async function updateProduct(id: string, input: ProductInput) {
