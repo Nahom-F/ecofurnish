@@ -105,7 +105,8 @@ database instead of memory (see `lib/auth.ts`) — run it before deploying,
 > `verification`, or `rateLimit` as "not in your schema" and asks whether
 > to delete them. **Always answer no** to any prompt naming one of those
 > five tables — answering yes drops them (and every account/session in
-> them) permanently. If you ever do this by accident: `pnpm auth:migrate`
+> them) permanently. If you ever do this by accident: `
+`
 > recreates the tables immediately (fixes sign-up/sign-in going forward),
 > but doesn't restore lost data — for that, Neon's point-in-time restore
 > only has a 6-hour window on the free plan, so act fast if it just

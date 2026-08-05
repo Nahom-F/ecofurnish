@@ -111,7 +111,7 @@ openssl rand -hex 32
 ### 2. Add it to your env vars
 
 ```
-TELEGRAM_WEBHOOK_SECRET="paste-the-random-string-here"
+TELEGRAM_WEBHOOK_SECRET="667c44e5638d0b1caf151a21413c9d6874dcb50bea28ea625df94a76c81d22fe paste-the-random-string-here"
 ```
 
 Add this in Vercel too (**Settings → Environment Variables**) — the
@@ -125,7 +125,7 @@ starts POSTing every incoming message to it. Visit this in any browser,
 filling in your real token, domain, and the secret from step 1:
 
 ```
-https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://ecofurnish.de5.net/api/telegram/webhook&secret_token=<YOUR_WEBHOOK_SECRET>
+https://api.telegram.org/bot8990206277:AAGlD2MfcRckMwYbduYtfkegsdqcagKV56o/setWebhook?url=https://ecofurnish.de5.net/api/telegram/webhook&secret_token=667c44e5638d0b1caf151a21413c9d6874dcb50bea28ea625df94a76c81d22fe
 ```
 
 A `{"ok":true,"result":true,...}` response means it's registered.
