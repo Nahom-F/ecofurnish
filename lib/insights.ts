@@ -55,11 +55,14 @@ export async function computeDailyDigest(): Promise<DailyDigest> {
       .where(and(eq(orders.paymentStatus, "paid"), gte(orders.createdAt, velocityWindowStart))),
     // Better Auth owns the `user` table outside Drizzle's schema (see
     // db/make-admin.ts for the same pattern) — a raw query is the only
-    // way to reach it from here.
+    // way to reach it from here. Better Auth's default Postgres adapter
+    // creates this column as camelCase, unlike every Drizzle-managed
+    // table in this app — it must stay quoted ("createdAt", not
+    // created_at) or Postgres won't find it.
     db.execute(sql`
       SELECT
         count(*)::int AS total,
-        count(*) FILTER (WHERE created_at >= ${weekAgo.toISOString()})::int AS new_this_week
+        count(*) FILTER (WHERE "createdAt" >= ${weekAgo.toISOString()})::int AS new_this_week
       FROM "user"
     `),
     // Store-wide, not per-product — a single satisfaction line for the

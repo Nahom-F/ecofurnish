@@ -51,8 +51,25 @@ export interface ProductInput {
 }
 
 function validateProductInput(input: ProductInput) {
-  if (input.discountPercent < 0 || input.discountPercent > 99) {
-    throw new Error("Discount must be between 0 and 99%.");
+  if (!input.name.trim()) throw new Error("Name is required.");
+  if (!input.category.trim()) throw new Error("Category is required.");
+  const price = parseFloat(input.price);
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error("Price must be a valid, non-negative number.");
+  }
+  if (!Number.isInteger(input.stock) || input.stock < 0) {
+    throw new Error("Stock must be a non-negative whole number.");
+  }
+  // The HTML max=99 on the form input is a UI hint only — a request
+  // straight to this action (or a typo like "150") would otherwise sail
+  // through and, via getEffectivePrice's formula, produce a negative
+  // price that flows straight into what Chapa actually charges.
+  if (
+    !Number.isInteger(input.discountPercent) ||
+    input.discountPercent < 0 ||
+    input.discountPercent > 99
+  ) {
+    throw new Error("Discount must be a whole number between 0 and 99.");
   }
 }
 
