@@ -6,7 +6,7 @@ async function callGemini(prompt: string): Promise<string | null> {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,6 +38,13 @@ async function callGemini(prompt: string): Promise<string | null> {
 // verify current limits at ai.google.dev, Google has changed free-tier
 // quotas before). Set GEMINI_API_KEY to enable this; without it, the
 // digest just sends the plain-text version from lib/insights.ts.
+//
+// Model name below WILL go stale again — Google has already deprecated
+// gemini-2.5-flash-lite (this originally used it) in favor of
+// gemini-3.5-flash-lite. When it fails, the error surfaces clearly in
+// Vercel's function logs as a 404 naming the dead model — check
+// ai.google.dev/gemini-api/docs/models for whatever the current
+// low-cost/low-latency model is called and swap it in below.
 export async function narrateDigest(digest: DailyDigest): Promise<string | null> {
   const prompt = `You write a short, casual daily business summary for the owner of a small furniture store, to be sent over Telegram. Use plain text with simple emoji, no markdown headers. Keep it under 120 words. Only use the numbers given below — never estimate or invent a number that isn't here.
 
