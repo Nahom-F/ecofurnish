@@ -6,6 +6,7 @@ import {
   sendDeleteAccountEmail,
   sendResetPasswordEmail,
   sendPasswordChangedEmail,
+  sendExistingAccountSignUpAttemptEmail,
 } from "@/lib/email";
 import { attributeReferral } from "@/lib/referrals";
 
@@ -67,6 +68,26 @@ export const auth = betterAuth({
     // from the token flow instead of a session lookup.
     onPasswordReset: async ({ user }) => {
       await sendPasswordChangedEmail(user.email, user.name ?? "there");
+    },
+    // Fires when someone submits the sign-up form with an email that's
+    // already registered. Better Auth deliberately returns a fake
+    // "success" response in this case (with requireEmailVerification on,
+    // as above) rather than a "user already exists" error — this stops an
+    // attacker from probing emails to see which ones already have
+    // accounts, since the requester's response looks identical either
+    // way. No new account is created and no email goes to whoever made
+    // the attempt.
+    //
+    // That silence is a problem for a genuine account owner who forgot
+    // they'd already signed up, though — they'd get no email and no clue
+    // to just sign in instead. This only notifies them if the existing
+    // account is actually verified; an unverified existing account is
+    // more likely the same person re-attempting their own signup, so
+    // there's nothing suspicious to flag.
+    onExistingUserSignUp: async ({ user }) => {
+      if (user.emailVerified) {
+        await sendExistingAccountSignUpAttemptEmail(user.email, user.name ?? "there");
+      }
     },
   },
   emailVerification: {

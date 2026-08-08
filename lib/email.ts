@@ -208,6 +208,50 @@ export async function sendPasswordChangedEmail(toEmail: string, name: string) {
   }
 }
 
+export async function sendExistingAccountSignUpAttemptEmail(toEmail: string, name: string) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — existing-account notice email was not sent.");
+    return;
+  }
+
+  const signInUrl = `${appUrl()}/sign-in`;
+  const forgotPasswordUrl = `${appUrl()}/forgot-password`;
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: "Someone tried to sign up with your EcoFurnish email",
+      text: `Hi ${name.split(" ")[0]},\n\nSomeone just tried to create a new EcoFurnish account using this email address, which already has an account.\n\nIf that was you, you don't need a new account — just sign in: ${signInUrl}\n\nForgot your password? Reset it here: ${forgotPasswordUrl}\n\nIf this wasn't you, no action is needed — your account is safe and no new account was created.`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">Someone tried to sign up with your email</h2>
+          <p style="color:#3a3f38;">
+            Hi ${name.split(" ")[0]}, someone just tried to create a new EcoFurnish account
+            using this email address — but you already have one.
+          </p>
+          <p style="color:#3a3f38;">
+            If that was you, you don't need a new account. Just sign in below:
+          </p>
+          <p style="margin:24px 0;">
+            <a href="${signInUrl}" style="background:#33472e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
+              Sign in
+            </a>
+          </p>
+          <p style="color:#6b6a5c;font-size:13px;">
+            Forgotten your password? <a href="${forgotPasswordUrl}" style="color:#33472e;">Reset it here</a>.
+          </p>
+          <p style="color:#6b6a5c;font-size:13px;margin-top:16px;border-top:1px solid #e0ddd0;padding-top:16px;">
+            If this wasn't you, no action is needed — your account is safe and no new account was created.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send existing-account notice email:", err);
+  }
+}
+
 export async function sendContactMessage(input: {
   name: string;
   email: string;
