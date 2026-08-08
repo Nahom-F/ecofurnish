@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { signUp, sendVerificationEmail } from "@/lib/auth-client";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { passesAllChecks } from "@/lib/password-strength";
@@ -18,6 +19,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
@@ -141,7 +143,26 @@ export default function SignUpPage() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={loading || !passwordValid}>
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <Checkbox
+            checked={agreedToTerms}
+            onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+            className="mt-0.5"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="font-medium text-foreground hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="font-medium text-foreground hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+
+        <Button type="submit" className="w-full" disabled={loading || !passwordValid || !agreedToTerms}>
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           Create account
         </Button>

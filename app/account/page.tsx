@@ -8,6 +8,7 @@ import { PasswordForm } from "@/components/account/password-form";
 import { AvatarPicker } from "@/components/account/avatar-picker";
 import { CurrencyForm } from "@/components/account/currency-form";
 import { DeleteAccountButton } from "@/components/account/delete-account-button";
+import { SignOutButton } from "@/components/account/sign-out-button";
 import type { Currency } from "@/lib/currency";
 
 export default async function AccountPage() {
@@ -79,6 +80,16 @@ export default async function AccountPage() {
           </p>
           <div className="mt-4">
             <PasswordForm />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-border/60 p-6">
+          <h2 className="font-semibold">Sign out</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            End your session on this device.
+          </p>
+          <div className="mt-4">
+            <SignOutButton />
           </div>
         </section>
 

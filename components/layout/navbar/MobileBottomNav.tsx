@@ -7,6 +7,7 @@ import { Home, LayoutGrid, Heart, ShoppingCart, User } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useWishlist } from '@/lib/wishlist-context'
 import { useSession } from '@/lib/auth-client'
+import { AvatarDisplay } from '@/components/avatar-display'
 
 interface Tab {
   href: string
@@ -115,6 +116,12 @@ export default function MobileBottomNav() {
         {tabs.map((tab) => {
           const active = tab.isActive(pathname)
           const Icon = tab.icon
+          // Desktop's account trigger shows a colored avatar (initials, or
+          // a chosen preset) even if you've never touched avatar settings —
+          // AvatarDisplay picks a color on its own. This tab only ever
+          // showed the plain outline User icon, which read as broken/
+          // inconsistent once you'd seen the desktop version.
+          const showAvatar = tab.label === 'Account' && mounted && session?.user
           return (
             <li key={tab.label} className="flex-1">
               <Link
@@ -126,7 +133,15 @@ export default function MobileBottomNav() {
                 aria-current={active ? 'page' : undefined}
               >
                 <span className="relative">
-                  <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                  {showAvatar ? (
+                    <AvatarDisplay
+                      image={session?.user?.image}
+                      name={session?.user?.name ?? '?'}
+                      className="h-5 w-5 text-[9px]"
+                    />
+                  ) : (
+                    <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                  )}
                   {!!tab.badge && tab.badge > 0 && (
                     <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[9px] font-semibold text-white">
                       {tab.badge}

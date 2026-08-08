@@ -18,6 +18,19 @@ export const auth = betterAuth({
   // FIX: Pass the pool directly instead of wrapping it in an object
   database: pool, 
   
+  // Without this, an error partway through an email-link flow (delete
+  // account, email verification, password reset) shows the visitor raw
+  // JSON like {"message":"Failed to get user info", ...} instead of an
+  // actual page. The most common real trigger: delete-account and
+  // password-reset links require an active session for the account being
+  // acted on (a deliberate Better Auth security check, not a bug) — if
+  // the link opens in a different browser/app than the one they're
+  // signed into (very easy to do from a phone's mail app), this is
+  // exactly the error that results.
+  onAPIError: {
+    errorURL: "/auth/error",
+  },
+  
   // This tells Better Auth about your custom admin column
   user: {
     additionalFields: {
