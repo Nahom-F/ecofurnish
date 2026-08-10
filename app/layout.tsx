@@ -12,6 +12,7 @@ import { siteConfig } from '@/config/site'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import InstallAppBanner from '@/components/pwa/InstallAppBanner'
 import MobileBottomNav from '@/components/layout/navbar/MobileBottomNav'
+import SupportChatWidget from '@/components/support/SupportChatWidget'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -96,6 +97,7 @@ export default function RootLayout({
                 <Toaster />
                 <InstallAppBanner />
                 <MobileBottomNav />
+                <SupportChatWidget />
               </WishlistProvider>
             </CartProvider>
           </CurrencyProvider>

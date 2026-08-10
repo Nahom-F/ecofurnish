@@ -80,7 +80,7 @@ async function callGroq(prompt: string): Promise<string | null> {
  * move on to the other provider rather than failing outright. Returns
  * null only if neither is configured or both calls failed, in which case
  * callers fall back to their own plain-text version. */
-async function callAI(prompt: string): Promise<string | null> {
+export async function callAI(prompt: string): Promise<string | null> {
   return (await callGemini(prompt)) ?? (await callGroq(prompt));
 }
 
