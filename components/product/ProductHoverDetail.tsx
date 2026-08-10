@@ -1,15 +1,10 @@
-"use client";
-
-import Image from "next/image";
 import Link from "next/link";
-import { Heart, Leaf, ShoppingCart, Star } from "lucide-react";
-import { toast } from "sonner";
+import { Leaf, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/lib/cart-context";
-import { useWishlist } from "@/lib/wishlist-context";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { getEffectivePrice, hasActiveDiscount } from "@/lib/pricing";
 import { Product } from "@/types/product";
+import ProductImage from "./ProductImage";
 
 export default function ProductHoverDetail({
   product,
@@ -19,133 +14,78 @@ export default function ProductHoverDetail({
   currency: Currency;
 }) {
   const discounted = hasActiveDiscount(product);
-  const { addItem } = useCart();
-  const { isWishlisted, toggleItem } = useWishlist();
-  const liked = isWishlisted(product.id);
-  const displayImage = product.imageUrl || "/placeholder.jpg";
-
-  function handleAddToCart(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: getEffectivePrice(product),
-      imageUrl: product.imageUrl,
-      stock: product.stock,
-    });
-    toast.success(`${product.name} added to cart`);
-  }
-
-  function handleWishlist(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleItem({
-      productId: product.id,
-      name: product.name,
-      price: getEffectivePrice(product),
-      imageUrl: product.imageUrl,
-    });
-  }
 
   return (
-    // Grows over the card's own footprint (a few px bigger on every side)
-    // instead of pushing new content in below it — the tile expands in
-    // place, like a Store app card growing on hover.
     <div
-      className="absolute -inset-2 z-30 flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 animate-in fade-in-0 zoom-in-95 sm:-inset-3"
-      // Purely supplementary — the card underneath already exposes the
-      // same name/link/actions to the keyboard & screen-reader tab order,
-      // so this expanded preview doesn't need its own stop in it.
+      // Pinned to the same top-left corner as the card underneath, so the
+      // product photo doesn't jump — it just grows downward in place,
+      // overlapping whatever's below it in the grid, the way a Windows
+      // Store tile expands on hover rather than opening a separate panel.
+      className="absolute inset-x-0 top-0 z-30 origin-top animate-in fade-in-0 zoom-in-95 overflow-hidden rounded-xl border border-border bg-card text-sm shadow-2xl duration-150"
+      // Purely supplementary detail — a screen reader already gets the full
+      // name/description from the card's own link, so this doesn't need to
+      // be announced a second time.
       aria-hidden="true"
     >
-      <Link href={`/products/${product.id}`} tabIndex={-1} className="contents">
-        <div className="relative aspect-square shrink-0 overflow-hidden bg-muted">
-          <Image
-            src={displayImage}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 767px) 55vw, (max-width: 1024px) 38vw, 28vw"
-          />
-          <Badge className="absolute left-2 top-2 flex items-center gap-1 bg-green-600 px-1.5 py-0.5 text-[0.65rem] text-white hover:bg-green-700 sm:left-3 sm:top-3 sm:px-2 sm:py-0.5 sm:text-xs">
-            <Leaf className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-            {product.plasticWeightKg}kg Diverted
-          </Badge>
-        </div>
+      <ProductImage product={product} />
 
-        <div className="flex grow flex-col p-3 pb-0 text-sm sm:p-4 sm:pb-0">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="font-heading text-base leading-snug font-medium">{product.name}</h3>
-            {discounted ? (
-              <div className="flex flex-col items-end whitespace-nowrap">
-                <span className="text-lg font-bold text-primary">
-                  {formatPrice(getEffectivePrice(product), currency)}
-                </span>
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatPrice(product.price, currency)}
-                </span>
-              </div>
-            ) : (
-              <span className="whitespace-nowrap text-lg font-bold text-primary">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-heading text-base leading-snug font-medium">{product.name}</h3>
+          {discounted ? (
+            <div className="flex flex-col items-end whitespace-nowrap">
+              <span className="text-lg font-bold text-primary">
+                {formatPrice(getEffectivePrice(product), currency)}
+              </span>
+              <span className="text-xs text-muted-foreground line-through">
                 {formatPrice(product.price, currency)}
               </span>
-            )}
-          </div>
-
-          {product.avgRating != null && product.reviewCount ? (
-            <div className="mt-1 flex items-center gap-1">
-              <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
-              <span className="text-xs font-medium">{product.avgRating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
             </div>
-          ) : null}
-
-          <p className="mt-2 line-clamp-3 text-muted-foreground">
-            {product.description || "Sustainable furniture crafted from recycled materials."}
-          </p>
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className="capitalize">
-              {product.category}
-            </Badge>
-            <span
-              className={
-                product.stock > 0
-                  ? "text-xs text-muted-foreground"
-                  : "text-xs font-medium text-destructive"
-              }
-            >
-              {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+          ) : (
+            <span className="whitespace-nowrap text-lg font-bold text-primary">
+              {formatPrice(product.price, currency)}
             </span>
-          </div>
+          )}
         </div>
-      </Link>
 
-      <div className="mt-auto flex items-center gap-1.5 p-3 pt-3 sm:gap-2 sm:p-4">
-        <button
-          type="button"
+        {product.avgRating != null && product.reviewCount ? (
+          <div className="mt-1 flex items-center gap-1">
+            <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs font-medium">{product.avgRating.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+          </div>
+        ) : null}
+
+        <p className="mt-2 text-muted-foreground">
+          {product.description || "Sustainable furniture crafted from recycled materials."}
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className="capitalize">
+            {product.category}
+          </Badge>
+          <Badge className="gap-1 bg-green-600 text-white hover:bg-green-700">
+            <Leaf className="size-3" />
+            {product.plasticWeightKg}kg diverted
+          </Badge>
+          <span
+            className={
+              product.stock > 0
+                ? "text-xs text-muted-foreground"
+                : "text-xs font-medium text-destructive"
+            }
+          >
+            {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+          </span>
+        </div>
+
+        <Link
+          href={`/products/${product.id}`}
           tabIndex={-1}
-          disabled={product.stock <= 0}
-          onClick={handleAddToCart}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 sm:text-sm"
+          className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
         >
-          <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
-        </button>
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-pressed={liked}
-          onClick={handleWishlist}
-          className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
-            liked
-              ? "border-red-500 bg-red-50 text-red-500"
-              : "border-border text-muted-foreground hover:border-red-500 hover:text-red-500"
-          }`}
-        >
-          <Heart size={16} fill={liked ? "currentColor" : "none"} />
-        </button>
+          View full details →
+        </Link>
       </div>
     </div>
   );

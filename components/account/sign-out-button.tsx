@@ -6,12 +6,12 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { signOut } from "@/lib/auth-client";
@@ -30,13 +30,13 @@ export function SignOutButton() {
         <DialogHeader>
           <DialogTitle>Sign out?</DialogTitle>
           <DialogDescription>
-            You&apos;ll need to sign in again to see your orders and wishlist.
+            You&apos;ll need to sign back in to check out, view your orders, or manage your
+            wishlist.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
           <Button
-            variant="destructive"
             onClick={() => {
               signOut();
               setOpen(false);
