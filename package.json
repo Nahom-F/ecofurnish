@@ -1,6 +1,6 @@
 {
   "name": "eco-furnish",
-  "version": "3.2.3",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@11.20.0",
   "scripts": {
