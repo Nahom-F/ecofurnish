@@ -37,11 +37,12 @@ export async function getSupportFacts(): Promise<SupportFacts> {
     paymentSteps:
       "Add items to your cart, go to checkout, sign in (or create a free account), enter your shipping details, then pay securely through Chapa — cards, Telebirr, CBE Birr, or bank transfer are all supported. We never see or store your card details.",
 
-    // PLACEHOLDER — drafted from the existing tagline/description in
-    // config/site.ts, not a statement the business has actually written.
-    // Edit to something real before launch.
+    // Sourced straight from app/about/page.tsx, so the bot's answer to
+    // "what is EcoFurnish" matches the actual About page instead of the
+    // old placeholder drafted from the site tagline. Keep these in sync
+    // if the About page copy changes.
     missionStatement:
-      "EcoFurnish exists to prove furniture can be both beautiful and genuinely sustainable — every piece is built from recycled materials without compromising on comfort or timeless design.",
+      "EcoFurnish turns the plastic waste piling up around Addis Ababa into furniture people actually want in their homes. We source reclaimed plastic and wood locally and work with small workshops to build pieces meant to last, not be replaced next season — and every product listing shows exactly how much plastic it diverted from landfills, no vague 'eco-friendly' claims.",
 
     links: {
       terms: `${siteConfig.url}/terms`,

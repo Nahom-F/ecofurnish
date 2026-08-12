@@ -9,6 +9,8 @@ import { AvatarPicker } from "@/components/account/avatar-picker";
 import { CurrencyForm } from "@/components/account/currency-form";
 import { DeleteAccountButton } from "@/components/account/delete-account-button";
 import { SignOutButton } from "@/components/account/sign-out-button";
+import { ImpactBanner } from "@/components/account/ImpactBanner";
+import { getUserPlasticDivertedKg } from "@/lib/impact";
 import type { Currency } from "@/lib/currency";
 
 export default async function AccountPage() {
@@ -16,10 +18,13 @@ export default async function AccountPage() {
   if (!session?.user) redirect("/sign-in");
 
   const isAdmin = session.user.role === "admin";
+  const divertedKg = await getUserPlasticDivertedKg(session.user.id);
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-8 text-3xl font-extrabold tracking-tight">Your Account</h1>
+      <h1 className="mb-6 text-3xl font-extrabold tracking-tight">Your Account</h1>
+
+      <ImpactBanner kg={divertedKg} />
 
       <div className="mb-8 flex gap-3">
         <Link

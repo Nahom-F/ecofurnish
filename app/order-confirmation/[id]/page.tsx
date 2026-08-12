@@ -9,6 +9,7 @@ import { formatPrice, type Currency } from "@/lib/currency";
 import { confirmPayment } from "@/app/actions/orders";
 import { ClearCartOnSuccess } from "@/components/clear-cart-on-success";
 import { ReorderButton, type ReorderItem } from "@/components/order/ReorderButton";
+import { OrderTimeline } from "@/components/order/OrderTimeline";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -93,15 +94,12 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pr
         </div>
 
         {isPaid && (
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Status</span>
-            <span className="font-medium capitalize">{order.status}</span>
-          </div>
-        )}
-        {order.trackingNote && (
-          <div className="mt-1 flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tracking</span>
-            <span className="font-medium">{order.trackingNote}</span>
+          <div className="mt-4 border-t border-border/60 pt-5">
+            <OrderTimeline
+              status={order.status}
+              createdAt={order.createdAt}
+              trackingNote={order.trackingNote}
+            />
           </div>
         )}
 
