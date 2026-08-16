@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
   try {
     event = resend.webhooks.verify({
       payload: rawBody,
-      headers: request.headers,
+      headers: {
+        id: request.headers.get("svix-id") ?? "",
+        timestamp: request.headers.get("svix-timestamp") ?? "",
+        signature: request.headers.get("svix-signature") ?? "",
+      },
       secret: process.env.RESEND_WEBHOOK_SECRET,
     });
   } catch (err) {
