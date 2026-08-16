@@ -15,10 +15,10 @@ import { inboundEmails } from "@/db/schema";
 // under Webhooks (a different value from RESEND_API_KEY) and must be set
 // as RESEND_WEBHOOK_SECRET.
 //
-// This needs a reasonably recent `resend` SDK version to have
-// `webhooks.verify()` / `emails.receiving.get()` — if either doesn't
-// exist on the installed version, this file won't type-check, which is
-// the signal to run `npm install resend@latest`.
+// Deliberately not hand-typing the verify() result here — it returns a
+// union covering every webhook event Resend sends (contacts, bounces,
+// etc.), not just email.received, so it's left to infer and narrowed
+// below via the `type` check instead of declared up front.
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not configured" }, { status: 500 });
   }
 
-  let event: { type: string; data: { email_id: string; from: string; to: string[]; subject?: string } };
+  let event;
   try {
     event = resend.webhooks.verify({
       payload: rawBody,
@@ -53,16 +53,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  // TypeScript narrows event.data to the email.received shape from here
+  // on, based on the type check above.
+  const { email_id, from, to, subject } = event.data;
+
   try {
-    const full = await resend.emails.receiving.get(event.data.email_id);
+    const full = await resend.emails.receiving.get(email_id);
 
     await db
       .insert(inboundEmails)
       .values({
-        resendEmailId: event.data.email_id,
-        fromEmail: event.data.from,
-        toEmail: event.data.to?.[0] ?? "",
-        subject: event.data.subject ?? "(no subject)",
+        resendEmailId: email_id,
+        fromEmail: from,
+        toEmail: to?.[0] ?? "",
+        subject: subject ?? "(no subject)",
         text: full.data?.text ?? null,
         html: full.data?.html ?? null,
       })
