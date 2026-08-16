@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         timestamp: request.headers.get("svix-timestamp") ?? "",
         signature: request.headers.get("svix-signature") ?? "",
       },
-      secret: process.env.RESEND_WEBHOOK_SECRET,
+      webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     });
   } catch (err) {
     console.error("Resend webhook signature verification failed:", err);
