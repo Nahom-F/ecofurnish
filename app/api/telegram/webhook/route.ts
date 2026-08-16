@@ -12,12 +12,12 @@ interface TelegramUpdate {
 }
 
 // Telegram POSTs every incoming message here once the webhook is
-// registered (see docs/telegram-bot.md for the one-time setup call).
+// registered (a one-time setup call, made separately).
 // Always returns 200 — Telegram retries on non-2xx responses, and a
 // malformed or unauthorized request isn't something retrying would fix.
 export async function POST(request: NextRequest) {
   // Set by Telegram on every webhook request once you register the
-  // webhook with a secret_token (see setup docs) — confirms this request
+  // webhook with a secret_token — confirms this request
   // actually came from Telegram and not some other caller who found the URL.
   const secret = request.headers.get("x-telegram-bot-api-secret-token");
   if (!process.env.TELEGRAM_WEBHOOK_SECRET || secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {

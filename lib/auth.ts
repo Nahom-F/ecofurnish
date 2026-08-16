@@ -53,7 +53,48 @@ export const auth = betterAuth({
       },
     },
   },
-  // You can add authentication providers here later (like Google, GitHub, or Email/Password)
+  // "Continue with ___" buttons. Each provider only turns on once its two
+  // env vars are actually set, so half-configured providers don't show a
+  // button that just errors when clicked.
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET
+      ? {
+          facebook: {
+            clientId: process.env.FACEBOOK_CLIENT_ID,
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+      ? {
+          microsoft: {
+            clientId: process.env.MICROSOFT_CLIENT_ID,
+            clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+            // "common" accepts both personal Microsoft accounts and work/
+            // school accounts from any organization — the right default
+            // for a public storefront. Narrow it to your own tenant ID
+            // only if you want to restrict sign-in to one organization.
+            tenantId: process.env.MICROSOFT_TENANT_ID || "common",
+          },
+        }
+      : {}),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          },
+        }
+      : {}),
+  },
   emailAndPassword: {
     enabled: true,
     // Blocks sign-in until the email link below is clicked.
@@ -112,6 +153,35 @@ export const auth = betterAuth({
       // point), so an abandoned/never-verified signup can't earn anyone a
       // referral credit.
       await attributeReferral(user.id);
+    },
+  },
+  // Email/password signups get the welcome email + referral credit from
+  // afterEmailVerification above, once they click the link. Social
+  // sign-ups never go through that step — the provider already vouches
+  // for the email — so this is the equivalent trigger for them. Gated on
+  // emailVerified so it can't double-fire: an email/password signup also
+  // creates a user row here (before verification, with emailVerified
+  // false), and skipping it keeps that path solely owned by
+  // afterEmailVerification like it already was.
+  //
+  // Wrapped in try/catch deliberately: Better Auth has open issues of
+  // this exact hook being unreliable for social sign-in specifically (the
+  // user row not always being found inside it). A failure here should
+  // cost a missed welcome email/referral credit, not break someone's
+  // actual sign-in.
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          try {
+            if (!user.emailVerified) return;
+            await sendWelcomeEmail(user.email, user.name ?? "there");
+            await attributeReferral(user.id);
+          } catch (err) {
+            console.error("Post-signup hook failed for", user.email, err);
+          }
+        },
+      },
     },
   },
   // Better Auth rate-limits auth routes by default in production, but its

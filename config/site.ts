@@ -13,7 +13,7 @@ export const siteConfig = {
 
   // Must match wherever the site is actually deployed — this is what
   // metadataBase resolves the manifest link, icons, and OG/Twitter image
-  // URLs against. Currently the real deployment target per DEPLOY.md.
+  // URLs against.
   // Update this (and NEXT_PUBLIC_APP_URL / BETTER_AUTH_URL) together if
   // you move to a different domain later.
   url: "https://ecofurnish.de5.net",
@@ -29,7 +29,7 @@ export const siteConfig = {
   // developer's. Swap in the real GitHub URL; used by the footer credit.
   developer: {
     name: "NF",
-    github: "https://github.com/Nahom-F",
+    github: "https://github.com/YOUR-USERNAME",
   },
 } as const;
 export const HERO_IMAGE = {

@@ -1,13 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { subscribeToNewsletter } from "@/app/actions/newsletter";
+import { subscribeToNewsletter, isSubscribedToNewsletter } from "@/app/actions/newsletter";
+import { useSession } from "@/lib/auth-client";
 
 export default function Newsletter() {
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // Only meaningful for a signed-in visitor — there's no reliable way to
+  // know an anonymous visitor already subscribed on a previous visit
+  // without a tracking cookie, which isn't worth it for this. For a
+  // logged-in account, checking their account email against the
+  // subscriber list is a real answer, not a guess.
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    let cancelled = false;
+    isSubscribedToNewsletter(session.user.email).then((subscribed) => {
+      if (!cancelled && subscribed) setStatus("done");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.email]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

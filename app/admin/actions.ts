@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { db } from "@/db";
-import { products, orders } from "@/db/schema";
+import { products, orders, inboundEmails } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
 
@@ -138,4 +138,10 @@ export async function updateOrderTrackingNote(orderId: string, trackingNote: str
     .where(eq(orders.id, orderId));
   revalidatePath("/admin/orders");
   revalidatePath(`/order-confirmation/${orderId}`);
+}
+
+export async function markInboundEmailRead(id: string, read: boolean) {
+  await requireAdmin();
+  await db.update(inboundEmails).set({ read }).where(eq(inboundEmails.id, id));
+  revalidatePath("/admin/inbox");
 }

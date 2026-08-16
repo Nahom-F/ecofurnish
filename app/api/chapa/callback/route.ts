@@ -14,7 +14,7 @@ import { confirmPayment } from "@/app/actions/orders";
 // before anything in the body is trusted. Chapa signs the raw request body
 // with the *webhook secret* you set in Dashboard → Settings → Webhooks —
 // note this is a separate value from CHAPA_SECRET_KEY (your API key), and
-// must be added to .env as CHAPA_WEBHOOK_SECRET. See SETUP.md.
+// must be added to .env as CHAPA_WEBHOOK_SECRET.
 //
 // Field names below (`x-chapa-signature`, `chapa-signature`, `tx_ref`)
 // follow Chapa's public webhook docs as of when this was written —

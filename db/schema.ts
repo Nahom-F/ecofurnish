@@ -155,3 +155,21 @@ export const referralRewards = pgTable(
     uniqueIndex("referral_rewards_user_milestone_idx").on(table.userId, table.milestone),
   ]
 );
+
+// Inbound emails to the Resend-managed domain (support@, hello@, etc.),
+// landed here by the webhook at app/api/resend/webhook/route.ts. Resend
+// itself only keeps these for 30 days, so this is the permanent copy —
+// and what the admin inbox page at /admin/inbox actually reads from.
+export const inboundEmails = pgTable("inbound_emails", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  // Resend's own email_id — unique constraint makes webhook retries
+  // (which Resend does on delivery failure) safe to insert twice.
+  resendEmailId: text("resend_email_id").notNull().unique(),
+  fromEmail: text("from_email").notNull(),
+  toEmail: text("to_email").notNull(),
+  subject: text("subject"),
+  text: text("text"),
+  html: text("html"),
+  read: boolean("read").default(false).notNull(),
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+});
