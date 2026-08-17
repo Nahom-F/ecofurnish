@@ -51,6 +51,26 @@ export default function PrivacyPage() {
           </p>
         </div>
 
+        <div id="deleting-your-data">
+          <h2>Deleting your data</h2>
+          <p>
+            If you have an account, sign in and go to{" "}
+            <a href="/account" className="text-primary hover:underline">
+              Account
+            </a>
+            , then choose Delete Account. You&apos;ll get a confirmation email —
+            clicking the link in it permanently deletes your account and
+            personal data. If you can&apos;t sign in (for example you&apos;ve lost
+            access to the email or social account you signed up with), reach
+            us through the{" "}
+            <a href="/contact" className="text-primary hover:underline">
+              contact page
+            </a>{" "}
+            and we&apos;ll delete it manually — we&apos;ll ask enough about the order
+            or account to make sure we&apos;re deleting the right one.
+          </p>
+        </div>
+
         <div>
           <h2>Contact</h2>
           <p>
