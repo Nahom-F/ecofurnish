@@ -108,6 +108,21 @@ export const auth = betterAuth({
           },
         }
       : {}),
+    // Reddit's OAuth scopes have no "email" permission at all (unlike the
+    // other four providers here) — worth testing this one specifically
+    // once deployed, since it's genuinely unclear whether sign-in will
+    // come back with an email to create/match an account against. Left
+    // out of trustedProviders in the account.accountLinking config above
+    // for the same reason Microsoft is: no confirmed verified-email
+    // guarantee to trust for auto-linking to an existing account.
+    ...(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET
+      ? {
+          reddit: {
+            clientId: process.env.REDDIT_CLIENT_ID,
+            clientSecret: process.env.REDDIT_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   emailAndPassword: {
     enabled: true,

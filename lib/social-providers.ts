@@ -7,6 +7,7 @@ export const SOCIAL_PROVIDERS = [
   { id: "facebook", name: "Facebook" },
   { id: "microsoft", name: "Microsoft" },
   { id: "github", name: "GitHub" },
+  { id: "reddit", name: "Reddit" },
 ] as const;
 
 export type SocialProviderId = (typeof SOCIAL_PROVIDERS)[number]["id"];
@@ -16,6 +17,7 @@ const ENV_KEYS: Record<SocialProviderId, [string, string]> = {
   facebook: ["FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET"],
   microsoft: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
   github: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+  reddit: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
 };
 
 /** Server-only — reads env vars, so don't call this from a "use client" file. */

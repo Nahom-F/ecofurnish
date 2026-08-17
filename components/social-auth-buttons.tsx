@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FaFacebookF, FaGithub, FaMicrosoft } from "react-icons/fa6";
+import { FaFacebookF, FaGithub, FaMicrosoft, FaReddit } from "react-icons/fa6";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
@@ -14,6 +14,7 @@ const ICONS: Record<SocialProviderId, React.ComponentType<{ className?: string }
   facebook: FaFacebookF,
   microsoft: FaMicrosoft,
   github: FaGithub,
+  reddit: FaReddit,
 };
 
 interface SocialAuthButtonsProps {
