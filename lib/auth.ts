@@ -56,6 +56,20 @@ export const auth = betterAuth({
   // "Continue with ___" buttons. Each provider only turns on once its two
   // env vars are actually set, so half-configured providers don't show a
   // button that just errors when clicked.
+  // Without this, Better Auth refuses to connect a social sign-in to an
+  // existing same-email account — it throws account_not_linked instead,
+  // as a deliberate safety default rather than silently merging accounts.
+  // "microsoft" is deliberately left out of trustedProviders: unlike
+  // Google/GitHub/Facebook, Entra doesn't reliably assert the email as
+  // verified (it can come from a tenant-mutable field), so trusting it
+  // for linking would mean trusting an unverified claim of "this is my
+  // email" — worth the extra friction for that one provider specifically.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google", "github", "facebook"],
+    },
+  },
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? {

@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FaFacebookF, FaGithub, FaGoogle, FaMicrosoft } from "react-icons/fa6";
+import { FaFacebookF, FaGithub, FaMicrosoft } from "react-icons/fa6";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { authClient } from "@/lib/auth-client";
 import { SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-providers";
 
 const ICONS: Record<SocialProviderId, React.ComponentType<{ className?: string }>> = {
-  google: FaGoogle,
+  google: GoogleIcon,
   facebook: FaFacebookF,
   microsoft: FaMicrosoft,
   github: FaGithub,
