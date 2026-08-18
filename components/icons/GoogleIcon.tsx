@@ -2,9 +2,9 @@
 // guidelines specify this exact four-color logo, not a single-tint
 // version, so this is separate from the other (monochrome, brand-
 // appropriate for their own marks) provider icons in social-auth-buttons.
-export function GoogleIcon({ className }: { className?: string }) {
+export function GoogleIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={className} viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} style={style} viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
       <path
         fill="#4285F4"
         d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.617z"

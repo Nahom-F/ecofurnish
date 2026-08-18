@@ -2,19 +2,33 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FaFacebookF, FaGithub, FaMicrosoft, FaReddit } from "react-icons/fa6";
+import { FaDiscord, FaFacebookF, FaGithub, FaGitlab, FaMicrosoft } from "react-icons/fa6";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { authClient } from "@/lib/auth-client";
 import { SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-providers";
 
-const ICONS: Record<SocialProviderId, React.ComponentType<{ className?: string }>> = {
+const ICONS: Record<
+  SocialProviderId,
+  React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+> = {
   google: GoogleIcon,
   facebook: FaFacebookF,
   microsoft: FaMicrosoft,
   github: FaGithub,
-  reddit: FaReddit,
+  discord: FaDiscord,
+  gitlab: FaGitlab,
+};
+
+// Only set for providers whose brand mark is meant to render in a fixed
+// signature color rather than inherit the button's neutral text color
+// (Facebook/Microsoft/GitHub's own guidelines are fine monochrome; Google
+// gets its own multi-color SVG instead of a color override — see
+// components/icons/GoogleIcon.tsx).
+const ICON_COLORS: Partial<Record<SocialProviderId, string>> = {
+  discord: "#5865F2", // Discord "blurple"
+  gitlab: "#FC6D26", // GitLab orange
 };
 
 interface SocialAuthButtonsProps {
@@ -52,23 +66,25 @@ export function SocialAuthButtons({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="grid gap-2">
+    <div className="space-y-2.5">
+      <div className="grid gap-1.5">
         {SOCIAL_PROVIDERS.filter((p) => providers.includes(p.id)).map(({ id, name }) => {
           const Icon = ICONS[id];
+          const color = ICON_COLORS[id];
           return (
             <Button
               key={id}
               type="button"
               variant="outline"
-              className="w-full justify-center gap-2"
+              size="sm"
+              className="w-full justify-center gap-1.5"
               disabled={disabled || pending !== null}
               onClick={() => handleClick(id)}
             >
               {pending === id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" style={color ? { color } : undefined} />
               )}
               Continue with {name}
             </Button>
