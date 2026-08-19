@@ -84,7 +84,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-2 lg:items-center lg:py-20">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:max-w-7xl lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-20">
         <AuthSidePanel
           heading={<>Join us.</>}
           subheading={
@@ -95,15 +95,15 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
           }
         />
 
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-md lg:p-10">
           {awaitingVerification ? (
             <div className="text-center">
-              <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
+              <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Check your email</h2>
               <p className="mt-3 text-sm text-muted-foreground">
                 We sent a verification link to your inbox. Click it to activate your account,
                 then come back and sign in.
               </p>
-              <Button className="mt-6 w-full" render={<Link href="/sign-in" />} nativeButton={false}>
+              <Button className="mt-6 w-full lg:h-11" render={<Link href="/sign-in" />} nativeButton={false}>
                 Go to sign in
               </Button>
               <button
@@ -121,7 +121,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold tracking-tight">Create an account</h2>
+              <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Create an account</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Faster checkout and order tracking, for future orders.
               </p>
@@ -168,7 +168,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                       required
                       autoComplete="name"
                       placeholder="Your name"
-                      className="pl-9"
+                      className="pl-9 lg:h-11"
                     />
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                       required
                       autoComplete="email"
                       placeholder="Enter your email"
-                      className="pl-9"
+                      className="pl-9 lg:h-11"
                     />
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Create a password"
-                      className="pl-9"
+                      className="pl-9 lg:h-11"
                     />
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full lg:h-11"
                   disabled={loading || !passwordValid || !agreedToTerms}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -84,7 +84,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-2 lg:items-center lg:py-20">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:max-w-7xl lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-20">
         {/* Decorative side — hidden below lg, this is styling only, none
             of the actual sign-in logic lives here. */}
         <AuthSidePanel
@@ -105,8 +105,8 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
         {/* The actual sign-in card — same form/logic as before, just
             restyled to sit inside a card with icon-led inputs. */}
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0">
-          <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-md lg:p-10">
+          <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Sign in</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Welcome back to <span className="font-medium text-primary">EcoFurnish</span>.
           </p>
@@ -147,7 +147,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
                       required
                       autoComplete="email"
                       placeholder="Enter your email"
-                      className="pl-9"
+                      className="pl-9 lg:h-11"
                     />
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
                       required
                       autoComplete="current-password"
                       placeholder="Enter your password"
-                      className="pl-9"
+                      className="pl-9 lg:h-11"
                     />
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full lg:h-11" disabled={loading}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Sign in
                 </Button>

@@ -63,8 +63,8 @@ export function SocialAuthButtons({
   }
 
   return (
-    <div className="space-y-2.5">
-      <div className="grid gap-1.5">
+    <div className="space-y-2.5 lg:space-y-3">
+      <div className="grid gap-1.5 lg:gap-2">
         {SOCIAL_PROVIDERS.filter((p) => providers.includes(p.id)).map(({ id, name }) => {
           const Icon = ICONS[id];
           const color = ICON_COLORS[id];
@@ -74,14 +74,14 @@ export function SocialAuthButtons({
               type="button"
               variant="outline"
               size="sm"
-              className="w-full justify-center gap-1.5"
+              className="w-full justify-center gap-1.5 lg:h-8 lg:gap-1.5 lg:px-2.5 lg:text-sm"
               disabled={disabled || pending !== null}
               onClick={() => handleClick(id)}
             >
               {pending === id ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin lg:h-4 lg:w-4" />
               ) : (
-                <Icon className="h-3.5 w-3.5" style={color ? { color } : undefined} />
+                <Icon className="h-3.5 w-3.5 lg:h-4 lg:w-4" style={color ? { color } : undefined} />
               )}
               Continue with {name}
             </Button>
