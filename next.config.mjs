@@ -1,5 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      // Next.js caps Server Action request bodies at 1MB by default. Product
+      // image uploads go through a Server Action (app/admin/actions.ts) and
+      // the app's own check allows images up to 4MB (MAX_IMAGE_BYTES) — so
+      // without this, any photo over ~1MB was rejected by Next.js itself,
+      // before uploadProductImage ever ran. That rejection doesn't reach the
+      // browser as a normal error either, which is why it looked like the
+      // upload was just hanging rather than failing outright.
+      bodySizeLimit: "5mb",
+    },
+  },
   images: {
     remotePatterns: [
       {

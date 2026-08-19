@@ -68,7 +68,27 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
 
     const formData = new FormData();
     formData.set("file", file);
-    const result = await uploadProductImage(formData);
+
+    // uploadProductImage catches its own errors and returns { success:
+    // false } for anything inside its try block — but a session that
+    // expired mid-edit (requireAdmin's redirect()), a request that got
+    // rejected before the action even ran (e.g. an oversized body), or a
+    // plain network drop all surface as a *thrown* error here instead of a
+    // resolved result. Without this try/catch/finally, any of those left
+    // uploading stuck on "Uploading…" forever with no feedback — which is
+    // exactly what an oversized image looked like before the body size
+    // limit fix in next.config.mjs.
+    let result: Awaited<ReturnType<typeof uploadProductImage>>;
+    try {
+      result = await uploadProductImage(formData);
+    } catch {
+      setUploading(false);
+      URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(null);
+      toast.error("Upload failed — please try again.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     setUploading(false);
     URL.revokeObjectURL(objectUrl);
