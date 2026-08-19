@@ -12,6 +12,15 @@ const SESSION_MISMATCH_CODES = new Set([
   "failed_to_get_user_info",
 ]);
 
+// Hit when someone signs in with a provider whose email matches an
+// existing account, but the safety check in account.accountLinking
+// declined to connect them automatically (see lib/auth.ts) — most often
+// because the existing account isn't email-verified yet, or the provider
+// being used isn't in trustedProviders. Not a bug: this is what stops the
+// same email from ending up as two separate accounts, at the cost of
+// this one confusing dead end for a legitimate user hitting the edge case.
+const ACCOUNT_LINKING_CODES = new Set(["account_not_linked", "unable_to_link_account"]);
+
 export default async function AuthErrorPage({
   searchParams,
 }: {
@@ -20,6 +29,7 @@ export default async function AuthErrorPage({
   const { error } = await searchParams;
   const code = error?.toLowerCase();
   const isSessionMismatch = code ? SESSION_MISMATCH_CODES.has(code) : false;
+  const isAccountLinking = code ? ACCOUNT_LINKING_CODES.has(code) : false;
 
   return (
     <div className="container mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center">
@@ -33,6 +43,12 @@ export default async function AuthErrorPage({
           you&apos;re still signed in there. If you opened this from an email app, it may have
           launched a different browser than the one you were using. Sign in again on the
           device/browser you started from, then request the email again.
+        </p>
+      ) : isAccountLinking ? (
+        <p className="mt-3 text-muted-foreground">
+          This email already has an EcoFurnish account. Sign in the way you originally set it
+          up — with a password, or whichever sign-in button you used the first time — rather
+          than the one you just tried.
         </p>
       ) : (
         <p className="mt-3 text-muted-foreground">

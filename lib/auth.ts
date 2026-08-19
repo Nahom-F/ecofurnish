@@ -60,14 +60,14 @@ export const auth = betterAuth({
   // existing same-email account — it throws account_not_linked instead,
   // as a deliberate safety default rather than silently merging accounts.
   // "microsoft" is deliberately left out of trustedProviders: unlike
-  // Google/GitHub/Facebook, Entra doesn't reliably assert the email as
+  // Google/GitHub, Entra doesn't reliably assert the email as
   // verified (it can come from a tenant-mutable field), so trusting it
   // for linking would mean trusting an unverified claim of "this is my
   // email" — worth the extra friction for that one provider specifically.
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google", "github", "facebook", "gitlab"],
+      trustedProviders: ["google", "github"],
     },
   },
   socialProviders: {
@@ -76,14 +76,6 @@ export const auth = betterAuth({
           google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          },
-        }
-      : {}),
-    ...(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET
-      ? {
-          facebook: {
-            clientId: process.env.FACEBOOK_CLIENT_ID,
-            clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
           },
         }
       : {}),
@@ -109,21 +101,13 @@ export const auth = betterAuth({
         }
       : {}),
     // Discord's account-verification reliability isn't confirmed the way
-    // Google/GitHub/Facebook's is (see trustedProviders below) — this is
+    // Google/GitHub's is (see trustedProviders below) — this is
     // sign-in only, no "guilds" or other Discord-data scopes requested.
     ...(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
       ? {
           discord: {
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
-          },
-        }
-      : {}),
-    ...(process.env.GITLAB_CLIENT_ID && process.env.GITLAB_CLIENT_SECRET
-      ? {
-          gitlab: {
-            clientId: process.env.GITLAB_CLIENT_ID,
-            clientSecret: process.env.GITLAB_CLIENT_SECRET,
           },
         }
       : {}),

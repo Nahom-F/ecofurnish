@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { signIn, authClient } from "@/lib/auth-client";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { SocialAuthButtons } from "@/components/social-auth-buttons";
+import { AuthSidePanel } from "@/components/auth/AuthSidePanel";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { verifyCaptcha } from "@/app/actions/captcha";
 import { toast } from "sonner";
@@ -82,75 +83,122 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
   }
 
   return (
-    <div className="container mx-auto flex max-w-sm flex-col justify-center px-4 py-24">
-      <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Welcome back to EcoFurnish.</p>
+    <div className="bg-emerald-50/50 dark:bg-transparent">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-2 lg:items-center lg:py-20">
+        {/* Decorative side — hidden below lg, this is styling only, none
+            of the actual sign-in logic lives here. */}
+        <AuthSidePanel
+          heading={
+            <>
+              Welcome
+              <br />
+              back!
+            </>
+          }
+          subheading={
+            <>
+              Sign in to continue your <span className="font-medium text-primary">sustainable</span>{" "}
+              journey.
+            </>
+          }
+        />
 
-      {unverifiedEmail ? (
-        <div className="mt-6 space-y-4 rounded-lg border border-border/60 p-4 text-sm">
-          <p className="text-muted-foreground">
-            <span className="font-medium text-foreground">{unverifiedEmail}</span> hasn&apos;t been
-            verified yet. Check your inbox for the link, or send a new one.
+        {/* The actual sign-in card — same form/logic as before, just
+            restyled to sit inside a card with icon-led inputs. */}
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0">
+          <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Welcome back to <span className="font-medium text-primary">EcoFurnish</span>.
           </p>
-          <Button onClick={handleResend} disabled={resending} className="w-full" size="sm">
-            {resending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Resend verification email
-          </Button>
-          <button
-            type="button"
-            onClick={() => setUnverifiedEmail(null)}
-            className="w-full text-center text-xs text-muted-foreground hover:underline"
-          >
-            Back to sign in
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="mt-6">
-            <SocialAuthButtons providers={socialProviders} />
-          </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" required autoComplete="email" />
+          {unverifiedEmail ? (
+            <div className="mt-6 space-y-4 rounded-lg border border-border/60 p-4 text-sm">
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">{unverifiedEmail}</span> hasn&apos;t
+                been verified yet. Check your inbox for the link, or send a new one.
+              </p>
+              <Button onClick={handleResend} disabled={resending} className="w-full" size="sm">
+                {resending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Resend verification email
+              </Button>
+              <button
+                type="button"
+                onClick={() => setUnverifiedEmail(null)}
+                className="w-full text-center text-xs text-muted-foreground hover:underline"
+              >
+                Back to sign in
+              </button>
             </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  Forgot password?
-                </Link>
+          ) : (
+            <>
+              <div className="mt-6">
+                <SocialAuthButtons providers={socialProviders} />
               </div>
-              <PasswordInput id="password" name="password" required autoComplete="current-password" />
-            </div>
 
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Checkbox checked={rememberMe} onCheckedChange={setRememberMe} />
-              Remember me
-            </label>
+              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="Enter your email"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <PasswordInput
+                      id="password"
+                      name="password"
+                      required
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
 
-            <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Checkbox checked={rememberMe} onCheckedChange={setRememberMe} />
+                  Remember me
+                </label>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+                <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sign in
-            </Button>
-          </form>
-        </>
-      )}
+                {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/sign-up" className="font-medium text-foreground hover:underline">
-          Sign up
-        </Link>
-      </p>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Sign in
+                </Button>
+              </form>
+            </>
+          )}
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/sign-up" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

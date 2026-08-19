@@ -4,22 +4,18 @@
 // in lib/auth.ts — same env vars, same ids.
 export const SOCIAL_PROVIDERS = [
   { id: "google", name: "Google" },
-  { id: "facebook", name: "Facebook" },
   { id: "microsoft", name: "Microsoft" },
   { id: "github", name: "GitHub" },
   { id: "discord", name: "Discord" },
-  { id: "gitlab", name: "GitLab" },
 ] as const;
 
 export type SocialProviderId = (typeof SOCIAL_PROVIDERS)[number]["id"];
 
 const ENV_KEYS: Record<SocialProviderId, [string, string]> = {
   google: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
-  facebook: ["FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET"],
   microsoft: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
   github: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
   discord: ["DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET"],
-  gitlab: ["GITLAB_CLIENT_ID", "GITLAB_CLIENT_SECRET"],
 };
 
 /** Server-only — reads env vars, so don't call this from a "use client" file. */

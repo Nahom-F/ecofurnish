@@ -13,6 +13,30 @@ const nextConfig = {
         hostname: "*.public.blob.vercel-storage.com",
         pathname: "/**",
       },
+      // Social sign-in avatars — session.user.image comes back as a real
+      // photo URL from these providers (see components/avatar-display.tsx's
+      // "legacy support" branch), and Next's Image component 400s on any
+      // remote host not explicitly listed here. Microsoft/Entra is
+      // deliberately not included: it doesn't hand back a plain public
+      // image URL the way these three do (photo retrieval goes through a
+      // separate authenticated Graph API call), so there's nothing at a
+      // fixed hostname to allow here — Microsoft sign-ins fall back to the
+      // initials avatar instead, which isn't a bug.
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

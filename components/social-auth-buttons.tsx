@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FaDiscord, FaFacebookF, FaGithub, FaGitlab, FaMicrosoft } from "react-icons/fa6";
+import { FaDiscord, FaGithub, FaMicrosoft } from "react-icons/fa6";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
@@ -14,21 +14,18 @@ const ICONS: Record<
   React.ComponentType<{ className?: string; style?: React.CSSProperties }>
 > = {
   google: GoogleIcon,
-  facebook: FaFacebookF,
   microsoft: FaMicrosoft,
   github: FaGithub,
   discord: FaDiscord,
-  gitlab: FaGitlab,
 };
 
 // Only set for providers whose brand mark is meant to render in a fixed
 // signature color rather than inherit the button's neutral text color
-// (Facebook/Microsoft/GitHub's own guidelines are fine monochrome; Google
+// (Microsoft/GitHub's own guidelines are fine monochrome; Google
 // gets its own multi-color SVG instead of a color override — see
 // components/icons/GoogleIcon.tsx).
 const ICON_COLORS: Partial<Record<SocialProviderId, string>> = {
   discord: "#5865F2", // Discord "blurple"
-  gitlab: "#FC6D26", // GitLab orange
 };
 
 interface SocialAuthButtonsProps {
