@@ -84,7 +84,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:max-w-7xl lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-20">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-8 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-10">
         {/* Decorative side — hidden below lg, this is styling only, none
             of the actual sign-in logic lives here. */}
         <AuthSidePanel
@@ -131,11 +131,11 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
             </div>
           ) : (
             <>
-              <div className="mt-6">
+              <div className="mt-4">
                 <SocialAuthButtons providers={socialProviders} />
               </div>
 
-              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <form onSubmit={handleSubmit} className="mt-4 space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
@@ -191,7 +191,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
             </>
           )}
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="font-medium text-primary hover:underline">
               Sign up

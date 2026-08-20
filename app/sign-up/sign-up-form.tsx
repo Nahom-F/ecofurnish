@@ -93,7 +93,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:max-w-7xl lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-20">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-8 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-10">
         <AuthSidePanel
           heading={
             <>
@@ -146,7 +146,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form onSubmit={handleSubmit} className="mt-4 space-y-3">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="name">Full name</Label>
@@ -262,11 +262,11 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                 </Button>
               </form>
 
-              <div className="mt-5">
+              <div className="mt-4">
                 <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
               </div>
 
-              <p className="mt-5 text-center text-xs text-muted-foreground">
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 By creating an account, you&apos;ll join the EcoFurnish community and start your{" "}
                 <span className="font-medium text-primary">sustainable</span> journey.
               </p>
