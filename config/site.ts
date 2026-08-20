@@ -26,10 +26,10 @@ export const siteConfig = {
 
   // The person who built this site — separate from `links` above, which
   // is EcoFurnish's own (storefront) social presence, not the
-  // developer's. Swap in the real GitHub URL; used by the footer credit.
+  // developer's. 
   developer: {
     name: "NF",
-    github: "https://github.com/YOUR-USERNAME",
+    github: "https://github.com/Nahom-F",
   },
 } as const;
 export const HERO_IMAGE = {

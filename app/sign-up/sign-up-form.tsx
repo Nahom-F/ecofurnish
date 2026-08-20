@@ -93,7 +93,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-4">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-6">
         <AuthSidePanel
           heading={
             <>
@@ -110,7 +110,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
           }
         />
 
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-6">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-8">
           {awaitingVerification ? (
             <div className="text-center">
               <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Check your email</h2>
@@ -144,10 +144,6 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                     Sign in
                   </Link>
                 </p>
-              </div>
-
-              <div className="mt-3">
-                <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
               </div>
 
               <form onSubmit={handleSubmit} className="mt-4 space-y-3">
@@ -265,6 +261,10 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                   Create account
                 </Button>
               </form>
+
+              <div className="mt-3">
+                <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
+              </div>
 
               <p className="mt-4 text-center text-xs text-muted-foreground">
                 By creating an account, you&apos;ll join the EcoFurnish community and start your{" "}

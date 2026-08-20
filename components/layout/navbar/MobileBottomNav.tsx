@@ -106,6 +106,13 @@ export default function MobileBottomNav() {
     }
   }
 
+  // Sign-in/sign-up drop all navigation chrome, top and bottom — see
+  // Navbar.tsx for the matching change and the reasoning. This has to be
+  // an early return placed after all the hooks above (not a top-of-
+  // function guard), since conditionally skipping hook calls breaks
+  // React's rule that hooks run in the same order every render.
+  if (pathname === '/sign-in' || pathname === '/sign-up') return null
+
   return (
     <nav
       aria-label="Primary"
