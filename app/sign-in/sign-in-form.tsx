@@ -84,7 +84,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-8 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-10">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-6">
         {/* Decorative side — hidden below lg, this is styling only, none
             of the actual sign-in logic lives here. */}
         <AuthSidePanel
