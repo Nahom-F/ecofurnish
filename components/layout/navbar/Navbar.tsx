@@ -22,9 +22,14 @@ export default function Navbar() {
   const pathname = usePathname();
 
   if (MINIMAL_ROUTES.has(pathname)) {
+    // No card/border/blur here on purpose — sign-in and sign-up render
+    // their own bg-emerald-50/50 wash right below this header, so giving
+    // the header that same tint (and skipping the border-b the full
+    // navbar uses) lets it blend into the page instead of reading as a
+    // separate box sitting on top of it.
     return (
       <header
-        className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md"
+        className="sticky top-0 z-50 bg-emerald-50/50 dark:bg-transparent"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:px-6">

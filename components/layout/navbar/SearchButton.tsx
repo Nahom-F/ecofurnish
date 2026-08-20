@@ -10,7 +10,7 @@ export default function SearchButton() {
     <Link
       href="/?focusSearch=1#all-products"
       aria-label="Search products"
-      className="rounded-xl p-2 transition-colors hover:bg-muted"
+      className="rounded-full p-2 transition-colors hover:bg-muted"
     >
       <Search className="h-5 w-5 text-foreground" />
     </Link>
