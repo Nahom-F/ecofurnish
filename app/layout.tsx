@@ -68,6 +68,7 @@ export const metadata: Metadata = {
     description,
     images: ['/og-image.jpg'],
   },
+  verification: { google: 'Nv1AodlIgORBiVZofXQKStI7Du3CVf-srjJRoJS8jNg' },
 }
 
 export const viewport: Viewport = {
