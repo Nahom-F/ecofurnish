@@ -21,6 +21,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
@@ -28,6 +29,10 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   const passwordValid = passesAllChecks(password);
+  // Purely a client-side typo check — the confirm field is never sent
+  // anywhere, it just catches "I fat-fingered my own password" before it
+  // becomes a locked-out account and a support request.
+  const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,6 +40,10 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
 
     if (!passwordValid) {
       setError("Please meet all the password requirements below.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Those passwords don't match.");
       return;
     }
 
@@ -86,16 +95,22 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
     <div className="bg-emerald-50/50 dark:bg-transparent">
       <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:max-w-7xl lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-20">
         <AuthSidePanel
-          heading={<>Join us.</>}
+          heading={
+            <>
+              Create your
+              <br />
+              account
+            </>
+          }
           subheading={
             <>
-              Create an account to start your{" "}
-              <span className="font-medium text-primary">sustainable</span> journey.
+              Join EcoFurnish and be part of a{" "}
+              <span className="font-medium text-primary">sustainable</span> future.
             </>
           }
         />
 
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-md lg:p-10">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-8">
           {awaitingVerification ? (
             <div className="text-center">
               <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Check your email</h2>
@@ -121,72 +136,49 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Create an account</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Faster checkout and order tracking, for future orders.
-              </p>
-
-              <label className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
-                <Checkbox
-                  checked={agreedToTerms}
-                  onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                  className="mt-0.5"
-                />
-                <span>
-                  I agree to the{" "}
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    className="font-medium text-foreground hover:underline"
-                  >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    className="font-medium text-foreground hover:underline"
-                  >
-                    Privacy Policy
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Create an account</h2>
+                <p className="text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/sign-in" className="font-medium text-primary hover:underline">
+                    Sign in
                   </Link>
-                  .
-                </span>
-              </label>
-
-              <div className="mt-4">
-                <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
+                </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Name</Label>
-                  <div className="relative">
-                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      name="name"
-                      required
-                      autoComplete="name"
-                      placeholder="Your name"
-                      className="pl-9 lg:h-11"
-                    />
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Full name</Label>
+                    <div className="relative">
+                      <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        name="name"
+                        required
+                        autoComplete="name"
+                        placeholder="Full name"
+                        className="pl-9 lg:h-11"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="Email address"
+                        className="pl-9 lg:h-11"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      placeholder="Enter your email"
-                      className="pl-9 lg:h-11"
-                    />
-                  </div>
-                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
@@ -198,36 +190,85 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                       autoComplete="new-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a password"
+                      placeholder="Password"
                       className="pl-9 lg:h-11"
                     />
                   </div>
+                  {password.length > 0 ? (
+                    <PasswordStrengthMeter password={password} />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Use 8 or more characters with a mix of letters, numbers &amp; symbols.
+                    </p>
+                  )}
                 </div>
-
-                {password.length > 0 && <PasswordStrengthMeter password={password} />}
 
                 <div className="space-y-1.5">
-                  <Label>Verify you&apos;re human</Label>
-                  <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
+                  <Label htmlFor="confirm-password">Confirm password</Label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <PasswordInput
+                      id="confirm-password"
+                      required
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                      className="pl-9 lg:h-11"
+                    />
+                  </div>
+                  {!passwordsMatch && (
+                    <p className="text-xs text-destructive">Passwords don&apos;t match.</p>
+                  )}
                 </div>
+
+                <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Checkbox
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    I agree to the{" "}
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+
+                <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken(null)} />
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <Button
                   type="submit"
                   className="w-full lg:h-11"
-                  disabled={loading || !passwordValid || !agreedToTerms}
+                  disabled={loading || !passwordValid || !passwordsMatch || !agreedToTerms}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Create account
                 </Button>
               </form>
 
-              <p className="mt-6 text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="/sign-in" className="font-medium text-primary hover:underline">
-                  Sign in
-                </Link>
+              <div className="mt-5">
+                <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
+              </div>
+
+              <p className="mt-5 text-center text-xs text-muted-foreground">
+                By creating an account, you&apos;ll join the EcoFurnish community and start your{" "}
+                <span className="font-medium text-primary">sustainable</span> journey.
               </p>
             </>
           )}
