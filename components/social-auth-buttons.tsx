@@ -65,6 +65,18 @@ export function SocialAuthButtons({
 
   return (
     <div className="space-y-2.5 lg:space-y-3">
+      {/* Sits above the button list, not below — both call sites now put
+          this component after the email/password form, so "or" needs to
+          read as "or continue with one of these" bridging from the form
+          above, not trail after the last button with nothing following
+          it (which is where this used to sit, back when social buttons
+          came first). */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="h-px flex-1 bg-border" />
+        or
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
       <div className="grid gap-1.5 lg:gap-2.5">
         {SOCIAL_PROVIDERS.filter((p) => providers.includes(p.id)).map(({ id, name }) => {
           const Icon = ICONS[id];
@@ -88,12 +100,6 @@ export function SocialAuthButtons({
             </Button>
           );
         })}
-      </div>
-
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        or
-        <div className="h-px flex-1 bg-border" />
       </div>
     </div>
   );

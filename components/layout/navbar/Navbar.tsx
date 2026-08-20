@@ -27,17 +27,9 @@ export default function Navbar() {
         className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:h-20 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:px-6">
           <Logo />
-          {/* SearchButton's own style is hover-only, right for the full
-              navbar where it's one of five icons — here it's the only
-              action on the page, so it gets a permanent circle instead of
-              relying on hover to read as clickable. Wrapped rather than
-              changed at the source, so the full navbar elsewhere is
-              unaffected. */}
-          <div className="rounded-full border border-border/60 bg-background p-0.5 shadow-sm">
-            <SearchButton />
-          </div>
+          <SearchButton />
         </div>
       </header>
     );

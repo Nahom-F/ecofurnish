@@ -84,7 +84,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-6">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-4 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-4">
         {/* Decorative side — hidden below lg, this is styling only, none
             of the actual sign-in logic lives here. */}
         <AuthSidePanel
@@ -139,10 +139,6 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
             </div>
           ) : (
             <>
-              <div className="mt-3">
-                <SocialAuthButtons providers={socialProviders} />
-              </div>
-
               <form onSubmit={handleSubmit} className="mt-4 space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="email">Email</Label>
@@ -196,6 +192,10 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
                   Sign in
                 </Button>
               </form>
+
+              <div className="mt-3">
+                <SocialAuthButtons providers={socialProviders} />
+              </div>
             </>
           )}
         </div>
