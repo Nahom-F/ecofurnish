@@ -106,7 +106,15 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
         {/* The actual sign-in card — same form/logic as before, just
             restyled to sit inside a card with icon-led inputs. */}
         <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-8">
-          <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Sign in</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Sign in</h2>
+            <p className="text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link href="/sign-up" className="font-medium text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Welcome back to <span className="font-medium text-primary">EcoFurnish</span>.
           </p>
@@ -131,7 +139,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
             </div>
           ) : (
             <>
-              <div className="mt-4">
+              <div className="mt-3">
                 <SocialAuthButtons providers={socialProviders} />
               </div>
 
@@ -190,13 +198,6 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
               </form>
             </>
           )}
-
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up" className="font-medium text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
         </div>
       </div>
     </div>

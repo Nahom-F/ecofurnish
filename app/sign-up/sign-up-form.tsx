@@ -262,7 +262,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                 </Button>
               </form>
 
-              <div className="mt-4">
+              <div className="mt-3">
                 <SocialAuthButtons providers={socialProviders} disabled={!agreedToTerms} />
               </div>
 
