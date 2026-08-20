@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ export function CatalogView({ products }: { products: Product[] }) {
   const [category, setCategory] = useState<string>(searchParams.get("category") || "all");
   const [room, setRoom] = useState<string>(searchParams.get("room") || "all");
   const { currency, setCurrency } = useCurrency();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Re-sync both filters whenever their URL param changes — e.g. clicking a
   // "Living Room" tile while already on this page doesn't remount
@@ -73,6 +74,18 @@ export function CatalogView({ products }: { products: Product[] }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (roomParam) setRoom(roomParam);
   }, [categoryParam, roomParam]);
+
+  // The navbar's search icon links here with ?focusSearch=1 (see
+  // SearchButton) so that landing on this section actually drops you into
+  // a ready-to-type box, not just scrolled nearby. The rAF delay lets the
+  // browser's own #all-products hash-scroll finish first, so focusing
+  // doesn't fight that scroll or fire before the element has settled.
+  const focusSearchParam = searchParams.get("focusSearch");
+  useEffect(() => {
+    if (!focusSearchParam) return;
+    const id = requestAnimationFrame(() => searchInputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [focusSearchParam]);
 
   const categories = useMemo(
     () => Array.from(new Set(products.map((p) => p.category))).sort(),
@@ -113,6 +126,7 @@ export function CatalogView({ products }: { products: Product[] }) {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             placeholder="Search products…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

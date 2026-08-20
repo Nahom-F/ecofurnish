@@ -84,7 +84,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
   return (
     <div className="bg-emerald-50/50 dark:bg-transparent">
-      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-6">
+      <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-6 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-4">
         {/* Decorative side — hidden below lg, this is styling only, none
             of the actual sign-in logic lives here. */}
         <AuthSidePanel
@@ -105,7 +105,7 @@ export function SignInForm({ socialProviders }: { socialProviders: SocialProvide
 
         {/* The actual sign-in card — same form/logic as before, just
             restyled to sit inside a card with icon-led inputs. */}
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-8">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-8 shadow-xl lg:mx-0 lg:max-w-xl lg:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 className="text-2xl font-bold tracking-tight lg:text-3xl">Sign in</h2>
             <p className="text-sm text-muted-foreground">
