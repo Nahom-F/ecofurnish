@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
 import { AvatarDisplay } from "@/components/avatar-display";
+import { NAV_HOVER_ICON } from "./nav-hover";
 
 export default function UserMenu() {
   const { data: session, isPending } = useSession();
@@ -45,11 +46,7 @@ export default function UserMenu() {
 
   if (!isPending && !session?.user) {
     return (
-      <Link
-        href="/sign-in"
-        aria-label="Sign in"
-        className="rounded-xl p-2 transition-colors hover:bg-muted"
-      >
+      <Link href="/sign-in" aria-label="Sign in" className={`${NAV_HOVER_ICON} p-2`}>
         <User className="h-5 w-5 text-foreground" />
       </Link>
     );
@@ -60,11 +57,7 @@ export default function UserMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              aria-label="Account menu"
-              className="overflow-hidden rounded-xl p-1 transition-colors hover:bg-muted"
-            />
+            <button type="button" aria-label="Account menu" className={`${NAV_HOVER_ICON} overflow-hidden p-1`} />
           }
         >
           <AvatarDisplay

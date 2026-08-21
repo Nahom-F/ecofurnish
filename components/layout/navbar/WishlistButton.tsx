@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
+import { NAV_HOVER_ICON } from "./nav-hover";
 
 export default function WishlistButton() {
   const { totalItems } = useWishlist();
 
   return (
-    <Link
-      href="/wishlist"
-      aria-label="Wishlist"
-      className="relative rounded-xl p-2 transition-colors hover:bg-muted"
-    >
+    <Link href="/wishlist" aria-label="Wishlist" className={`${NAV_HOVER_ICON} p-2`}>
       <Heart className="h-5 w-5 text-foreground" />
       {totalItems > 0 && (
         <span

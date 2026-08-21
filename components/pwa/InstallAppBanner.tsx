@@ -73,7 +73,8 @@ export default function InstallAppBanner() {
     // exactly the hydration mismatch this structure exists to avoid.
     if (isStandalone() || safeGetLocalStorageItem(DISMISS_KEY)) return
 
-    setDismissed(false)
+    // Deliberate post-mount flip for hydration-safe rendering, not a sync bug.
+    setDismissed(false) // eslint-disable-line react-hooks/set-state-in-effect
 
     if (isIos()) {
       setManualHint('ios')

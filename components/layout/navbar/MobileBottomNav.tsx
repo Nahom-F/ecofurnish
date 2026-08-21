@@ -28,7 +28,10 @@ export default function MobileBottomNav() {
   // render their real values until after mount, or the server-rendered
   // pass (always "empty"/signed-out) won't match the client's first pass.
   const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    // Deliberate post-mount flip for hydration-safe rendering, not a sync bug.
+    setMounted(true) // eslint-disable-line react-hooks/set-state-in-effect
+  }, [])
 
   // Home and Categories both live at "/" — only which section is actually
   // in view tells them apart. Tried tracking window.location.hash directly

@@ -69,9 +69,7 @@ export function CatalogView({ products }: { products: Product[] }) {
   const categoryParam = searchParams.get("category");
   const roomParam = searchParams.get("room");
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (categoryParam) setCategory(categoryParam);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (categoryParam) setCategory(categoryParam); // eslint-disable-line react-hooks/set-state-in-effect
     if (roomParam) setRoom(roomParam);
   }, [categoryParam, roomParam]);
 

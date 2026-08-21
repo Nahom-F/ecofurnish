@@ -144,7 +144,7 @@ export function BroadcastForm({ counts }: { counts: { allCustomers: number; subs
               <DialogDescription>
                 This goes out immediately to{" "}
                 {audience === "subscribers" ? "everyone on the newsletter list" : "every customer account"}
-                . Sending a test to yourself first is a good idea if you haven't already.
+                . Sending a test to yourself first is a good idea if you haven&apos;t already.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

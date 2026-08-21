@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { NAV_HOVER_ICON } from "./nav-hover";
 
 export default function CartButton() {
   const { totalItems } = useCart();
 
   return (
-    <Link
-      href="/cart"
-      aria-label="Shopping Cart"
-      className="relative rounded-xl p-2 transition-colors hover:bg-muted"
-    >
+    <Link href="/cart" aria-label="Shopping Cart" className={`${NAV_HOVER_ICON} p-2`}>
       {/* Keying on totalItems forces React to remount this element whenever
           the cart total changes, which replays the one-shot "animate-in"
           animation — the same visible feedback for +1 as for -1, so it
