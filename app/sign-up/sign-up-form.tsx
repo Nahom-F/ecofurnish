@@ -92,7 +92,7 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
   }
 
   return (
-    <div className="bg-emerald-50/50 dark:bg-transparent">
+    <div className="bg-emerald-50 dark:bg-transparent">
       <div className="container mx-auto grid max-w-6xl gap-12 px-4 py-4 lg:max-w-7xl lg:grid-cols-2 lg:items-start lg:gap-16 lg:py-4">
         <AuthSidePanel
           heading={

@@ -6,6 +6,7 @@ import NavLinks from "./NavLinks";
 import MobileNav from "./MobileNav";
 import NavbarActions from "./NavbarActions";
 import SearchButton from "./SearchButton";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Sign-in/sign-up intentionally drop the full nav — no products live to
 // browse on those pages, so Shop/Collections/wishlist/cart/account are
@@ -30,9 +31,12 @@ export default function Navbar() {
         className="sticky top-0 z-50 bg-background/90 backdrop-blur-md"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:px-6">
-          <Logo />
-          <SearchButton />
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Logo />
+            <SearchButton />
+          </div>
+          <ThemeToggle />
         </div>
       </header>
     );
