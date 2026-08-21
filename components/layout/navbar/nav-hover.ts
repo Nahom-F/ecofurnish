@@ -20,11 +20,22 @@
 // overlaps into their space. The same deepen-on-hover treatment applies
 // on `aria-expanded` (open dropdown state) so a dropdown trigger doesn't
 // flatten back out the moment its menu opens and the cursor drifts off.
+// The fill itself is a custom color, not a Tailwind swatch — matching a
+// generic green (like emerald-50) risked landing on a slightly different
+// hue than the page's own custom green theme (this site's greens lean
+// warmer/olive; emerald leans cooler/teal), which would look like a
+// mismatched sticker rather than a lighter shade of the same surface.
+// Pulled the hue straight from this theme's own CSS variables
+// (app/globals.css) and kept it, just pushed lighter/more saturated than
+// the page background so the pill reads as a raised, tinted surface
+// rather than plain white — same idea in dark mode: lighter and a touch
+// more saturated than the dark background/card, which is the direction
+// "raised" reads correctly in dark mode too.
 const NEUMORPHIC_BASE =
-  "relative bg-white/85 shadow-[0_3px_10px_rgba(6,78,59,0.12)] transition-all duration-200 dark:bg-black/40 dark:shadow-[0_0_14px_rgba(16,185,129,0.15)]";
+  "relative bg-[oklch(0.97_0.05_130)] shadow-[0_3px_10px_rgba(6,78,59,0.12)] transition-all duration-200 dark:bg-[oklch(0.30_0.05_145)] dark:shadow-[0_0_14px_rgba(16,185,129,0.12)]";
 
 const NEUMORPHIC_HOVER =
-  "hover:z-10 hover:scale-110 hover:shadow-[0_6px_18px_rgba(6,78,59,0.20)] dark:hover:shadow-[0_0_22px_rgba(16,185,129,0.28)] aria-expanded:z-10 aria-expanded:scale-110 aria-expanded:shadow-[0_6px_18px_rgba(6,78,59,0.20)] dark:aria-expanded:shadow-[0_0_22px_rgba(16,185,129,0.28)]";
+  "hover:z-10 hover:scale-110 hover:shadow-[0_6px_18px_rgba(6,78,59,0.20)] dark:hover:shadow-[0_0_22px_rgba(16,185,129,0.22)] aria-expanded:z-10 aria-expanded:scale-110 aria-expanded:shadow-[0_6px_18px_rgba(6,78,59,0.20)] dark:aria-expanded:shadow-[0_0_22px_rgba(16,185,129,0.22)]";
 
 // Icon buttons (search, wishlist, cart, account, theme) — circular,
 // padding supplied per-component (p-1/p-2) since avatar vs. icon sizes

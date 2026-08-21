@@ -47,7 +47,7 @@ export default function ContactPage() {
             <Mail className="mt-0.5 h-5 w-5 text-primary" />
             <div>
               <p className="font-medium">Email</p>
-              <p className="text-sm text-muted-foreground">hello@ecofurnish.example</p>
+              <p className="text-sm text-muted-foreground">admin@ecofurnish.de5.net</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
