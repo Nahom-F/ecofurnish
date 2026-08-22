@@ -61,29 +61,40 @@ export default function CartPage() {
             </div>
 
             <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-normal">
-              <div className="flex items-center rounded-lg border border-border">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </Button>
-                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                  aria-label="Increase quantity"
-                  disabled={item.quantity >= item.stock}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center rounded-lg border border-border">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    aria-label="Increase quantity"
+                    disabled={item.quantity >= item.stock}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
 
-              <div className="w-20 shrink-0 text-right font-semibold">
-                {formatPrice((parseFloat(item.price) * item.quantity).toFixed(2), currency)}
+                {/* Keyed on quantity so React remounts it on every +/- click,
+                    which is what makes the pop-in animation replay each
+                    time instead of only on first render. Decreasing to 0
+                    removes the whole item (see updateQuantity in
+                    cart-context.tsx), which takes this badge with it —
+                    nothing extra needed for it to "disappear". */}
+                <span
+                  key={item.quantity}
+                  className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold whitespace-nowrap text-primary duration-200 animate-in fade-in-0 zoom-in-90"
+                >
+                  {formatPrice((parseFloat(item.price) * item.quantity).toFixed(2), currency)}
+                </span>
               </div>
 
               <Button
