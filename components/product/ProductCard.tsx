@@ -17,11 +17,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, currency = "ETB" }: ProductCardProps) {
   const [open, setOpen] = useState(false);
-  const [canHover] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches
-  );
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -34,7 +29,6 @@ export default function ProductCard({ product, currency = "ETB" }: ProductCardPr
   }, []);
 
   function scheduleOpen() {
-    if (!canHover) return;
     if (showTimer.current) clearTimeout(showTimer.current);
     showTimer.current = setTimeout(() => setOpen(true), 200);
   }

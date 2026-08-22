@@ -13,13 +13,8 @@ interface ProductGalleryProps {
 export default function ProductGallery({ product }: ProductGalleryProps) {
   // Cover photo first, then the extra gallery photos — one combined list
   // so the arrows/thumbnails don't need to treat the cover specially.
-  // Excludes the literal placeholder path too, not just empty values —
-  // a brand-new product defaults its cover to /placeholder.jpg until an
-  // admin uploads a real one, and without this a product with extra
-  // photos added before its cover was set would show that generic
-  // placeholder as if it were a real photo in the gallery.
   const photos = [product.imageUrl, ...product.images].filter(
-    (src): src is string => !!src && src !== "/placeholder.jpg"
+    (src): src is string => !!src
   );
   const displayPhotos = photos.length > 0 ? photos : ["/placeholder.jpg"];
   const [index, setIndex] = useState(0);
@@ -34,7 +29,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
 
   return (
     <div className="space-y-3">
-      <div className="group relative aspect-square overflow-hidden rounded-2xl bg-muted">
+      <div className="group relative h-64 overflow-hidden rounded-2xl bg-muted sm:h-80 md:h-96 lg:h-[420px]">
         <Image
           src={displayPhotos[index]}
           alt={product.name}
@@ -81,18 +76,18 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
       </div>
 
       {hasMultiple && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pb-1">
           {displayPhotos.map((src, i) => (
             <button
               key={src + i}
               type="button"
               onClick={() => setIndex(i)}
               aria-label={`View photo ${i + 1}`}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+              className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-colors sm:h-24 sm:w-24 ${
                 i === index ? "border-primary" : "border-transparent"
               }`}
             >
-              <Image src={src} alt="" fill className="object-cover" sizes="64px" />
+              <Image src={src} alt="" fill className="object-cover" sizes="96px" />
             </button>
           ))}
         </div>

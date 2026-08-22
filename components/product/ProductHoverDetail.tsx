@@ -26,10 +26,8 @@ export default function ProductHoverDetail({
 
   // Cover photo first, then extras — lets shoppers flip through a
   // product's other pictures right from the catalog, without opening it.
-  // Excludes the literal placeholder path too — see ProductGallery.tsx
-  // for why a bare truthy check isn't enough here.
   const photos = [product.imageUrl, ...product.images].filter(
-    (src): src is string => !!src && src !== "/placeholder.jpg"
+    (src): src is string => !!src
   );
   const displayPhotos = photos.length > 0 ? photos : ["/placeholder.jpg"];
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -166,6 +164,11 @@ export default function ProductHoverDetail({
             <Badge variant="outline" className="capitalize">
               {product.category}
             </Badge>
+            {product.rooms.map((room) => (
+              <Badge key={room} variant="secondary" className="text-[0.65rem]">
+                {room}
+              </Badge>
+            ))}
             <span
               className={
                 product.stock > 0
