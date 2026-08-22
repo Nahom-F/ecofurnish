@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
+import { NAV_HOVER_LINK } from "@/components/layout/navbar/nav-hover";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { siteConfig } from "@/config/site";
@@ -80,9 +81,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main className="container mx-auto px-4 py-20">
+      {/* Fixed instead of inline so it's still reachable while scrolled deep
+          into the page — same neumorphic pill as the Home/Shop/etc. nav
+          buttons (NAV_HOVER_LINK), not a separate one-off style. Sits just
+          under the sticky navbar (which is h-16/h-20 + z-50) so it never
+          overlaps it. */}
       <Link
         href="/"
-        className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className={`${NAV_HOVER_LINK} fixed left-4 top-[4.5rem] z-40 !inline-flex items-center gap-1.5 sm:left-6 sm:top-24`}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to catalog

@@ -13,8 +13,13 @@ interface ProductGalleryProps {
 export default function ProductGallery({ product }: ProductGalleryProps) {
   // Cover photo first, then the extra gallery photos — one combined list
   // so the arrows/thumbnails don't need to treat the cover specially.
+  // Excludes the literal placeholder path too, not just empty values —
+  // a brand-new product defaults its cover to /placeholder.jpg until an
+  // admin uploads a real one, and without this a product with extra
+  // photos added before its cover was set would show that generic
+  // placeholder as if it were a real photo in the gallery.
   const photos = [product.imageUrl, ...product.images].filter(
-    (src): src is string => !!src
+    (src): src is string => !!src && src !== "/placeholder.jpg"
   );
   const displayPhotos = photos.length > 0 ? photos : ["/placeholder.jpg"];
   const [index, setIndex] = useState(0);
@@ -35,7 +40,14 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
           alt={product.name}
           fill
           priority
-          className="object-cover"
+          // object-contain, not object-cover — the box's aspect ratio (a
+          // fixed height, but a fluid width) won't usually match a given
+          // photo's natural proportions, especially for a tall subject
+          // like a tiered plant stand. object-cover would crop to fill
+          // that mismatch; object-contain always shows the full photo,
+          // letterboxed against bg-muted above if the shapes don't match
+          // rather than cutting anything off.
+          className="object-contain"
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
         <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-green-600 text-white hover:bg-green-700">

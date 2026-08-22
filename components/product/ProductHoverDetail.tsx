@@ -26,8 +26,13 @@ export default function ProductHoverDetail({
 
   // Cover photo first, then extras — lets shoppers flip through a
   // product's other pictures right from the catalog, without opening it.
+  // Excludes the literal placeholder path too — a brand-new product
+  // defaults its cover to /placeholder.jpg until an admin uploads a real
+  // one, and without this, a product with extra photos added before its
+  // cover was set would show that generic placeholder as if it were a
+  // real photo in the gallery.
   const photos = [product.imageUrl, ...product.images].filter(
-    (src): src is string => !!src
+    (src): src is string => !!src && src !== "/placeholder.jpg"
   );
   const displayPhotos = photos.length > 0 ? photos : ["/placeholder.jpg"];
   const [photoIndex, setPhotoIndex] = useState(0);
