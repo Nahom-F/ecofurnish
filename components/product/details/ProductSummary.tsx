@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-context";
 import { useCurrency } from "@/lib/currency-context";
 import { getEffectivePrice } from "@/lib/pricing";
@@ -38,9 +40,12 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+        <Link
+          href={`/?category=${encodeURIComponent(product.category)}#all-products`}
+          className="text-sm font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
+        >
           {product.category}
-        </span>
+        </Link>
         <h1 className="mt-1 text-4xl font-bold">{product.name}</h1>
       </div>
 
@@ -56,6 +61,24 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
       <p className="text-muted-foreground">
         {product.description || "Sustainable furniture crafted from recycled materials."}
       </p>
+
+      {product.rooms.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Fits
+          </span>
+          {product.rooms.map((room) => (
+            <Link key={room} href={`/?room=${encodeURIComponent(room)}#all-products`}>
+              <Badge
+                variant="outline"
+                className="cursor-pointer transition-colors hover:border-primary hover:text-primary"
+              >
+                {room}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {!outOfStock && (
         <QuantitySelector

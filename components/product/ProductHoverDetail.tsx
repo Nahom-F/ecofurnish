@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Leaf, ShoppingCart, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Leaf, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-context";
@@ -22,7 +23,28 @@ export default function ProductHoverDetail({
   const { addItem } = useCart();
   const { isWishlisted, toggleItem } = useWishlist();
   const liked = isWishlisted(product.id);
-  const displayImage = product.imageUrl || "/placeholder.jpg";
+
+  // Cover photo first, then extras — lets shoppers flip through a
+  // product's other pictures right from the catalog, without opening it.
+  const photos = [product.imageUrl, ...product.images].filter(
+    (src): src is string => !!src
+  );
+  const displayPhotos = photos.length > 0 ? photos : ["/placeholder.jpg"];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const hasMultiplePhotos = displayPhotos.length > 1;
+  const displayImage = displayPhotos[photoIndex];
+
+  function nextPhoto(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setPhotoIndex((i) => (i + 1) % displayPhotos.length);
+  }
+
+  function prevPhoto(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setPhotoIndex((i) => (i - 1 + displayPhotos.length) % displayPhotos.length);
+  }
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -72,6 +94,39 @@ export default function ProductHoverDetail({
             <Leaf className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             {product.plasticWeightKg}kg Diverted
           </Badge>
+
+          {hasMultiplePhotos && (
+            <>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={prevPhoto}
+                aria-label="Previous photo"
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 shadow-md hover:bg-background sm:left-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={nextPhoto}
+                aria-label="Next photo"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 shadow-md hover:bg-background sm:right-2"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
+                {displayPhotos.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1 w-1 rounded-full ${
+                      i === photoIndex ? "bg-white" : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex grow flex-col p-3 pb-0 text-sm sm:p-4 sm:pb-0">

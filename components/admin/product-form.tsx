@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, ImagePlus } from "lucide-react";
+import { Loader2, ImagePlus, X, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,7 @@ const emptyProduct: ProductInput = {
   description: "",
   price: "0.00",
   imageUrl: "/placeholder.jpg",
+  images: [],
   category: "Other",
   rooms: [],
   stock: 0,
@@ -44,6 +45,13 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Extra gallery photos (beyond the cover photo above) — a product
+  // typically has 4+ pictures, so these get uploaded and managed
+  // separately from the single cover-photo flow.
+  const MAX_EXTRA_PHOTOS = 7;
+  const [uploadingExtra, setUploadingExtra] = useState(false);
+  const extraFileInputRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -102,6 +110,58 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
 
     update("imageUrl", result.url);
     setPreviewUrl(null); // now shown via values.imageUrl itself instead
+  }
+
+  async function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    const remainingSlots = MAX_EXTRA_PHOTOS - values.images.length;
+    if (remainingSlots <= 0) {
+      toast.error(`You can add up to ${MAX_EXTRA_PHOTOS} extra photos.`);
+      if (extraFileInputRef.current) extraFileInputRef.current.value = "";
+      return;
+    }
+    const toUpload = files.slice(0, remainingSlots);
+    if (files.length > toUpload.length) {
+      toast.error(`Only added ${toUpload.length} — that's the max of ${MAX_EXTRA_PHOTOS} extra photos.`);
+    }
+
+    setUploadingExtra(true);
+    // Uploaded one at a time (not Promise.all) so a failure partway through
+    // still keeps whatever succeeded before it, instead of losing the batch.
+    for (const file of toUpload) {
+      const formData = new FormData();
+      formData.set("file", file);
+      try {
+        const result = await uploadProductImage(formData);
+        if (!result.success) {
+          toast.error(`${file.name}: ${result.error}`);
+          continue;
+        }
+        setValues((v) => ({ ...v, images: [...v.images, result.url] }));
+      } catch {
+        toast.error(`${file.name}: upload failed — please try again.`);
+      }
+    }
+    setUploadingExtra(false);
+    if (extraFileInputRef.current) extraFileInputRef.current.value = "";
+  }
+
+  function removePhoto(index: number) {
+    setValues((v) => ({ ...v, images: v.images.filter((_, i) => i !== index) }));
+  }
+
+  // Swaps an extra photo into the cover slot — the photo that was
+  // previously the cover takes its place in the extra-photos list, so
+  // nothing gets lost, they just trade places.
+  function makeCoverPhoto(index: number) {
+    setValues((v) => {
+      const nextImages = [...v.images];
+      const promoted = nextImages[index];
+      nextImages[index] = v.imageUrl;
+      return { ...v, imageUrl: promoted, images: nextImages };
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -208,7 +268,10 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
       </div>
 
       <div className="space-y-1.5">
-        <Label>Product image</Label>
+        <Label>Cover photo</Label>
+        <p className="text-xs text-muted-foreground">
+          The main photo shown in the catalog, on the product card, and in search results.
+        </p>
         <div className="flex items-start gap-4">
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
             {(previewUrl || values.imageUrl) && (
@@ -253,6 +316,76 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
               className="text-xs"
             />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Additional photos</Label>
+        <p className="text-xs text-muted-foreground">
+          Extra angles and details shown in the product gallery and cycled through when
+          shoppers hover the product card. Up to {MAX_EXTRA_PHOTOS}, on top of the cover photo.
+        </p>
+
+        {values.images.length > 0 && (
+          <div className="flex flex-wrap gap-3 pt-1">
+            {values.images.map((url, index) => (
+              <div key={url + index} className="group relative h-24 w-24 shrink-0">
+                <div className="relative h-full w-full overflow-hidden rounded-lg border border-border/60 bg-muted">
+                  <Image src={url} alt="" fill className="object-cover" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(index)}
+                  aria-label="Remove photo"
+                  className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive p-1 text-destructive-foreground shadow"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => makeCoverPhoto(index)}
+                  className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 rounded-b-lg bg-background/85 py-1 text-[0.65rem] font-medium opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <Star className="h-2.5 w-2.5" />
+                  Make cover
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-2">
+          <input
+            ref={extraFileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleAddPhotos}
+            disabled={uploadingExtra || values.images.length >= MAX_EXTRA_PHOTOS}
+            className="hidden"
+            id="extra-images-upload"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={uploadingExtra || values.images.length >= MAX_EXTRA_PHOTOS}
+            onClick={() => extraFileInputRef.current?.click()}
+          >
+            {uploadingExtra ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImagePlus className="h-4 w-4" />
+            )}
+            {uploadingExtra
+              ? "Uploading…"
+              : values.images.length >= MAX_EXTRA_PHOTOS
+                ? "Max photos reached"
+                : "Add photos"}
+          </Button>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {values.images.length}/{MAX_EXTRA_PHOTOS} added — select multiple files at once, or
+            add them one by one.
+          </p>
         </div>
       </div>
 

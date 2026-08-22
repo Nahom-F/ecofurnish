@@ -42,6 +42,7 @@ export interface ProductInput {
   description: string;
   price: string;
   imageUrl: string;
+  images: string[];
   category: string;
   rooms: string[];
   stock: number;
@@ -70,6 +71,11 @@ function validateProductInput(input: ProductInput) {
     input.discountPercent > 99
   ) {
     throw new Error("Discount must be a whole number between 0 and 99.");
+  }
+  // Cover photo + up to 7 extra = 8 total, which is plenty for a product
+  // gallery and keeps the admin form and hover-cycler from getting unwieldy.
+  if (input.images.length > 7) {
+    throw new Error("You can add up to 7 extra photos on top of the cover photo.");
   }
 }
 

@@ -47,6 +47,7 @@ interface Product {
   description: string | null;
   price: string;
   imageUrl: string | null;
+  images: string[];
   category: string;
   rooms: string[];
   stock: number;

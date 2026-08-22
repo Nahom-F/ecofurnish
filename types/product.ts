@@ -7,6 +7,8 @@ export interface Product {
   description: string | null;
   price: string; // numeric columns come back as strings from Drizzle
   imageUrl: string | null;
+  // Extra gallery photos beyond imageUrl (the cover shot). See db/schema.ts.
+  images: string[];
   category: string;
   rooms: string[];
   stock: number;

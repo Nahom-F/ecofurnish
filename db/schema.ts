@@ -7,6 +7,11 @@ export const products = pgTable("products", {
   // Drizzle handles the numeric prices perfectly
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   imageUrl: text("image_url"),
+  // Extra gallery photos beyond the cover shot above (imageUrl stays the
+  // cover/thumbnail everywhere it's already used — cart, wishlist, order
+  // snapshots, OG tags — so none of that had to change). Order here is
+  // display order on the product page and in the hover/next-photo cycler.
+  images: text("images").array().notNull().default([]),
   // Used to group products in the catalog filters (e.g. "Seating", "Storage")
   category: text("category").notNull().default("Other"),
   // Which room(s) this piece suits (e.g. "Living Room", "Bedroom") — kept
