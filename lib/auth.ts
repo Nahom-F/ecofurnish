@@ -7,8 +7,8 @@ import {
   sendResetPasswordEmail,
   sendPasswordChangedEmail,
   sendExistingAccountSignUpAttemptEmail,
-} from "@/lib/email";
-import { attributeReferral } from "@/lib/referrals";
+} from "./email";
+import { attributeReferral } from "./referrals";
 
 // Set up the database connection pool using your environment variable
 const pool = new Pool({

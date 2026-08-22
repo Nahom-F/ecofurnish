@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx db/seed.ts",
     "make-admin": "tsx db/make-admin.ts",
-    "auth:migrate": "npx @better-auth/cli migrate"
+    "auth:migrate": "npx auth migrate"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

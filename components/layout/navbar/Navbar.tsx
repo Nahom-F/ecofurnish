@@ -36,7 +36,7 @@ export default function Navbar() {
             <Logo />
             <SearchButton />
           </div>
-          <ThemeToggle />
+          <ThemeToggle compact />
         </div>
       </header>
     );
