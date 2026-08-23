@@ -35,26 +35,36 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
 
   return (
     <div className="space-y-3">
-      <div className="group relative h-64 overflow-hidden rounded-2xl bg-muted sm:h-80 md:h-96 lg:h-[420px]">
-        <Image
-          src={displayPhotos[index]}
-          alt={product.name}
-          fill
-          priority
-          // object-contain, not object-cover — the box's aspect ratio (a
-          // fixed height, but a fluid width) won't usually match a given
-          // photo's natural proportions, especially for a tall subject
-          // like a tiered plant stand. object-cover would crop to fill
-          // that mismatch; object-contain always shows the full photo,
-          // letterboxed against bg-muted above if the shapes don't match
-          // rather than cutting anything off.
-          className="object-contain"
-          sizes="(max-width: 1024px) 100vw, 50vw"
-        />
-        <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-green-600 text-white hover:bg-green-700">
-          <Leaf className="h-3 w-3" />
-          {product.plasticWeightKg}kg Plastic Diverted
-        </Badge>
+      <div className="group relative h-64 rounded-2xl sm:h-80 md:h-96 lg:h-[420px]">
+        {/* Image clipping lives on its own inner layer now, separate from
+            the outer positioning box. The arrows below need to spill their
+            glow shadow outward past their own edges — if they shared this
+            same overflow-hidden box as the image, that outward glow would
+            get cut off right at the rounded corner, since the buttons sit
+            close to it (left-3/right-3). Splitting the two lets the image
+            still clip to rounded corners while the arrows/dots, as
+            children of the outer (non-clipping) box, render freely. */}
+        <div className="absolute inset-0 overflow-hidden rounded-2xl bg-muted">
+          <Image
+            src={displayPhotos[index]}
+            alt={product.name}
+            fill
+            priority
+            // object-contain, not object-cover — the box's aspect ratio (a
+            // fixed height, but a fluid width) won't usually match a given
+            // photo's natural proportions, especially for a tall subject
+            // like a tiered plant stand. object-cover would crop to fill
+            // that mismatch; object-contain always shows the full photo,
+            // letterboxed against bg-muted above if the shapes don't match
+            // rather than cutting anything off.
+            className="object-contain"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+          />
+          <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-green-600 text-white hover:bg-green-700">
+            <Leaf className="h-3 w-3" />
+            {product.plasticWeightKg}kg Plastic Diverted
+          </Badge>
+        </div>
 
         {hasMultiple && (
           <>
