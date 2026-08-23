@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Leaf } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
+import { NAV_HOVER_ICON } from "@/components/layout/navbar/nav-hover";
 
 interface ProductGalleryProps {
   product: Product;
@@ -61,7 +62,15 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
               type="button"
               onClick={prev}
               aria-label="Previous photo"
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-2 opacity-0 shadow-md transition-opacity hover:bg-background group-hover:opacity-100"
+              // !absolute, not plain absolute: NAV_HOVER_ICON's own base
+              // styling includes `relative` (it needs a positioning
+              // context for its own hover effects). Same equal-specificity
+              // conflict as the "Back to catalog" button on this same
+              // page — Tailwind generates position utilities
+              // alphabetically, so plain `relative` would silently win
+              // over plain `absolute` in the compiled stylesheet. The `!`
+              // forces this absolute to win regardless of that ordering.
+              className={`${NAV_HOVER_ICON} !absolute left-3 top-1/2 -translate-y-1/2 p-2 opacity-0 group-hover:opacity-100`}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -69,7 +78,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
               type="button"
               onClick={next}
               aria-label="Next photo"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-2 opacity-0 shadow-md transition-opacity hover:bg-background group-hover:opacity-100"
+              className={`${NAV_HOVER_ICON} !absolute right-3 top-1/2 -translate-y-1/2 p-2 opacity-0 group-hover:opacity-100`}
             >
               <ChevronRight className="h-5 w-5" />
             </button>

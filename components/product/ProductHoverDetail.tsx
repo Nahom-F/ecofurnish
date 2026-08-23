@@ -11,6 +11,7 @@ import { useWishlist } from "@/lib/wishlist-context";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { getEffectivePrice, hasActiveDiscount } from "@/lib/pricing";
 import { Product } from "@/types/product";
+import { NAV_HOVER_ICON } from "@/components/layout/navbar/nav-hover";
 
 export default function ProductHoverDetail({
   product,
@@ -107,7 +108,9 @@ export default function ProductHoverDetail({
                 tabIndex={-1}
                 onClick={prevPhoto}
                 aria-label="Previous photo"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 shadow-md hover:bg-background sm:left-2"
+                // !absolute — see ProductGallery.tsx for why plain
+                // absolute isn't safe to combine with NAV_HOVER_ICON.
+                className={`${NAV_HOVER_ICON} !absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 sm:left-2`}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -116,7 +119,7 @@ export default function ProductHoverDetail({
                 tabIndex={-1}
                 onClick={nextPhoto}
                 aria-label="Next photo"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-background/80 p-1.5 shadow-md hover:bg-background sm:right-2"
+                className={`${NAV_HOVER_ICON} !absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 sm:right-2`}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
