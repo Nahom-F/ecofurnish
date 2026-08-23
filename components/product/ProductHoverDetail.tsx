@@ -92,7 +92,7 @@ export default function ProductHoverDetail({
             src={displayImage}
             alt={product.name}
             fill
-            className="object-cover"
+            className="object-contain"
             sizes="(max-width: 767px) 55vw, (max-width: 1024px) 38vw, 28vw"
           />
           <Badge className="absolute left-2 top-2 flex items-center gap-1 bg-green-600 px-1.5 py-0.5 text-[0.65rem] text-white hover:bg-green-700 sm:left-3 sm:top-3 sm:px-2 sm:py-0.5 sm:text-xs">

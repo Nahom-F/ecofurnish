@@ -12,7 +12,7 @@ export default function ProductImage({ product }: { product: Product }) {
         src={displayImage}
         alt={product.name}
         fill
-        className="object-cover transition-transform hover:scale-105"
+        className="object-contain transition-transform hover:scale-105"
         sizes="(max-width: 767px) 50vw, (max-width: 1024px) 33vw, 25vw"
       />
       {/* Eco-Impact Badge overlaid on the image */}

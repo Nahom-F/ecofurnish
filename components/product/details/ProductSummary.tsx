@@ -7,6 +7,7 @@ import { Product } from "@/types/product";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart-context";
 import { useCurrency } from "@/lib/currency-context";
+import { formatPrice } from "@/lib/currency";
 import { getEffectivePrice } from "@/lib/pricing";
 import ProductMeta from "./ProductMeta";
 import QuantitySelector from "./QuantitySelector";
@@ -81,12 +82,27 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
       )}
 
       {!outOfStock && (
-        <QuantitySelector
-          quantity={quantity}
-          onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
-          onIncrease={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-          max={product.stock}
-        />
+        <div className="flex items-center gap-2.5">
+          <QuantitySelector
+            quantity={quantity}
+            onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
+            onIncrease={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+            max={product.stock}
+          />
+          {/* Same pattern as the cart page's running-total badge: keyed on
+              quantity so React remounts it on every +/- click, replaying
+              the pop-in animation each time instead of only on first
+              render. Uses getEffectivePrice (the discounted price, same
+              value handleAddToCart actually sends to the cart) rather
+              than product.price directly, so this preview always matches
+              what actually gets added. */}
+          <span
+            key={quantity}
+            className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold whitespace-nowrap text-primary duration-200 animate-in fade-in-0 zoom-in-90"
+          >
+            {formatPrice((parseFloat(getEffectivePrice(product)) * quantity).toFixed(2), currency)}
+          </span>
+        </div>
       )}
 
       <div className="flex gap-3">
