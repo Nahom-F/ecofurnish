@@ -6,8 +6,7 @@ import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { products, orders, inboundEmails } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendAdminMessage } from "@/lib/email";
-import { applyOrderStatus } from "@/lib/orders";
+import { sendOrderStatusUpdateEmail, sendAdminMessage } from "@/lib/email";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // stay comfortably under Vercel's 4.5MB server-upload cap
@@ -54,10 +53,14 @@ export interface ProductInput {
 
 function validateProductInput(input: ProductInput) {
   if (!input.name.trim()) throw new Error("Name is required.");
+  if (!input.description.trim()) throw new Error("Description is required.");
+  if (!input.imageUrl || input.imageUrl === "/placeholder.jpg") {
+    throw new Error("A cover photo is required.");
+  }
   if (!input.category.trim()) throw new Error("Category is required.");
   const price = parseFloat(input.price);
-  if (!Number.isFinite(price) || price < 0) {
-    throw new Error("Price must be a valid, non-negative number.");
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error("Price must be a valid number greater than 0.");
   }
   if (!Number.isInteger(input.stock) || input.stock < 0) {
     throw new Error("Stock must be a non-negative whole number.");
@@ -107,13 +110,30 @@ export async function deleteProduct(id: string) {
   revalidatePath("/");
 }
 
-// This is a manual override — normal delivery-lifecycle transitions
-// (ready_for_delivery -> ... -> delivered) are meant to happen through a
-// dispatcher approving a driver's claim instead (see
-// app/dispatcher/actions.ts), which calls the same applyOrderStatus core.
+const VALID_STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"];
+
 export async function updateOrderStatus(orderId: string, status: string) {
   await requireAdmin();
-  await applyOrderStatus(orderId, status);
+  if (!VALID_STATUSES.includes(status)) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  const [existing] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!existing) throw new Error("Order not found");
+
+  await db.update(orders).set({ status }).where(eq(orders.id, orderId));
+
+  // Only notify on an actual change — re-selecting the same status
+  // (nothing to tell the customer) shouldn't re-send anything.
+  if (existing.status !== status) {
+    await sendOrderStatusUpdateEmail(
+      existing.customerEmail,
+      existing.customerName,
+      orderId,
+      status,
+      existing.trackingNote
+    );
+  }
 
   revalidatePath("/admin/orders");
   revalidatePath(`/order-confirmation/${orderId}`);

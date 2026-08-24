@@ -45,6 +45,10 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Only start showing red outlines after the admin actually tries to
+  // continue — a brand-new, all-blank form shouldn't look broken before
+  // anyone's typed anything.
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   // Extra gallery photos (beyond the cover photo above) — a product
   // typically has 4+ pictures, so these get uploaded and managed
@@ -164,8 +168,44 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
     });
   }
 
+  // The 5 fields an admin can't skip: name, description, a real cover
+  // photo (not the placeholder), a real price, and a valid stock count.
+  // Category always has a value already (the field defaults to "Other"
+  // and has its own datalist), and discount is deliberately optional —
+  // 0% is a normal, complete state for it, not a missing one — so
+  // neither needs to be in this list.
+  function getMissingRequiredFields(v: ProductInput): Set<string> {
+    const missing = new Set<string>();
+    if (!v.name.trim()) missing.add("name");
+    if (!v.description.trim()) missing.add("description");
+    if (!v.imageUrl || v.imageUrl === "/placeholder.jpg") missing.add("cover");
+    if (!(parseFloat(v.price) > 0)) missing.add("price");
+    if (!Number.isInteger(v.stock) || v.stock < 0) missing.add("stock");
+    return missing;
+  }
+
+  const missingFields = hasAttemptedSubmit ? getMissingRequiredFields(values) : new Set<string>();
+
+  function fieldErrorClass(key: string) {
+    return missingFields.has(key) ? "border-destructive ring-2 ring-destructive/30" : "";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
+
+    const missing = getMissingRequiredFields(values);
+    if (missing.size > 0) {
+      toast.error("Fill in the highlighted fields before continuing.");
+      // Scroll to whichever required field is missing and comes first in
+      // the form, rather than leaving the admin to hunt for it.
+      const fieldOrder = ["name", "description", "price", "stock", "cover"];
+      const firstMissing = fieldOrder.find((key) => missing.has(key));
+      const elementId = firstMissing === "cover" ? "cover-photo-section" : firstMissing;
+      document.getElementById(elementId!)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (productId) {
@@ -185,32 +225,48 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
   return (
     <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" required value={values.name} onChange={(e) => update("name", e.target.value)} />
+        <Label htmlFor="name">
+          Name <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="name"
+          required
+          value={values.name}
+          onChange={(e) => update("name", e.target.value)}
+          className={fieldErrorClass("name")}
+        />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">
+          Description <span className="text-destructive">*</span>
+        </Label>
         <Textarea
           id="description"
           value={values.description}
           onChange={(e) => update("description", e.target.value)}
+          className={fieldErrorClass("description")}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="price">Price (ETB)</Label>
+          <Label htmlFor="price">
+            Price (ETB) <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="price"
             required
             inputMode="decimal"
             value={values.price}
             onChange={(e) => update("price", e.target.value)}
+            className={fieldErrorClass("price")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="stock">Stock</Label>
+          <Label htmlFor="stock">
+            Stock <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="stock"
             type="number"
@@ -218,6 +274,7 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
             required
             value={values.stock}
             onChange={(e) => update("stock", Number(e.target.value))}
+            className={fieldErrorClass("stock")}
           />
         </div>
       </div>
@@ -267,13 +324,17 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Cover photo</Label>
+      <div id="cover-photo-section" className="space-y-1.5">
+        <Label>
+          Cover photo <span className="text-destructive">*</span>
+        </Label>
         <p className="text-xs text-muted-foreground">
           The main photo shown in the catalog, on the product card, and in search results.
         </p>
         <div className="flex items-start gap-4">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
+          <div
+            className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted ${fieldErrorClass("cover")}`}
+          >
             {(previewUrl || values.imageUrl) && (
               <Image
                 src={previewUrl || values.imageUrl}
@@ -390,7 +451,9 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
       </div>
 
       <div className="space-y-2 rounded-lg border border-emerald-700/30 bg-emerald-700/5 p-4">
-        <Label>Discount</Label>
+        <Label>
+          Discount <span className="font-normal text-muted-foreground">(optional)</span>
+        </Label>
         <p className="text-xs text-muted-foreground">
           Leave at 0% for no discount. Runs until you change it back — there&apos;s no
           automatic expiry.
