@@ -110,7 +110,9 @@ export function CatalogView({ products }: { products: Product[] }) {
       const matchesCategory = category === "all" || p.category === category;
       const matchesRoom =
         room === "all" ||
-        normalizeRooms(p.rooms).some((r) => r.toLowerCase() === room.toLowerCase());
+        normalizeRooms(p.rooms).some(
+          (r) => r.toLowerCase() === "all" || r.toLowerCase() === room.toLowerCase()
+        );
       const matchesSearch =
         search.trim() === "" ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||

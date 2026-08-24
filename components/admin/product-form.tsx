@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CATEGORIES } from "@/data/categories";
+import { DROPDOWN_ITEM_HOVER } from "@/lib/dropdown-item-hover";
 import {
   createProduct,
   updateProduct,
@@ -56,6 +57,11 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
   const MAX_EXTRA_PHOTOS = 7;
   const [uploadingExtra, setUploadingExtra] = useState(false);
   const extraFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const matchingCategories = existingCategories.filter((c) =>
+    c.toLowerCase().includes(values.category.trim().toLowerCase())
+  );
 
   function update<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -169,11 +175,12 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
   }
 
   // The 5 fields an admin can't skip: name, description, a real cover
-  // photo (not the placeholder), a real price, and a valid stock count.
-  // Category always has a value already (the field defaults to "Other"
-  // and has its own datalist), and discount is deliberately optional —
-  // 0% is a normal, complete state for it, not a missing one — so
-  // neither needs to be in this list.
+  // photo (not the placeholder), a real price, a valid stock count, and
+  // a category. Discount is deliberately optional — 0% is a normal,
+  // complete state for it, not a missing one — so it's not in this list.
+  // Rooms isn't either: leaving it blank is meaningful (see
+  // handleSubmit below, where that's saved as fitting all rooms
+  // automatically) rather than an error to flag.
   function getMissingRequiredFields(v: ProductInput): Set<string> {
     const missing = new Set<string>();
     if (!v.name.trim()) missing.add("name");
@@ -181,6 +188,7 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
     if (!v.imageUrl || v.imageUrl === "/placeholder.jpg") missing.add("cover");
     if (!(parseFloat(v.price) > 0)) missing.add("price");
     if (!Number.isInteger(v.stock) || v.stock < 0) missing.add("stock");
+    if (!v.category.trim()) missing.add("category");
     return missing;
   }
 
@@ -199,20 +207,28 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
       toast.error("Fill in the highlighted fields before continuing.");
       // Scroll to whichever required field is missing and comes first in
       // the form, rather than leaving the admin to hunt for it.
-      const fieldOrder = ["name", "description", "price", "stock", "cover"];
+      const fieldOrder = ["name", "description", "price", "stock", "category", "cover"];
       const firstMissing = fieldOrder.find((key) => missing.has(key));
       const elementId = firstMissing === "cover" ? "cover-photo-section" : firstMissing;
       document.getElementById(elementId!)?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
+    // No room checked means "fits anywhere" — save that as an explicit
+    // "all" rather than an empty list, so it shows up as a real "Fits:
+    // All" tag on the product page instead of just showing nothing.
+    const payload: ProductInput = {
+      ...values,
+      rooms: values.rooms.length > 0 ? values.rooms : ["all"],
+    };
+
     setSubmitting(true);
     try {
       if (productId) {
-        await updateProduct(productId, values);
+        await updateProduct(productId, payload);
         toast.success("Product updated");
       } else {
-        await createProduct(values);
+        await createProduct(payload);
         toast.success("Product created");
       }
       router.push("/admin/products");
@@ -281,19 +297,48 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            required
-            list="existing-categories"
-            value={values.category}
-            onChange={(e) => update("category", e.target.value)}
-          />
-          <datalist id="existing-categories">
-            {existingCategories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
+          <Label htmlFor="category">
+            Category <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <Input
+              id="category"
+              required
+              autoComplete="off"
+              value={values.category}
+              onChange={(e) => {
+                update("category", e.target.value);
+                setCategoryDropdownOpen(true);
+              }}
+              onFocus={() => setCategoryDropdownOpen(true)}
+              onBlur={() => setCategoryDropdownOpen(false)}
+              className={fieldErrorClass("category")}
+            />
+            {categoryDropdownOpen && matchingCategories.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-popover p-1 shadow-md">
+                {matchingCategories.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    // Fires before the input's onBlur, so clicking a
+                    // suggestion doesn't close the dropdown before the
+                    // click itself registers.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      update("category", c);
+                      setCategoryDropdownOpen(false);
+                    }}
+                    className={`block w-full rounded-md px-3 py-1.5 text-left text-sm outline-hidden ${DROPDOWN_ITEM_HOVER}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pick an existing category above, or just type a new one.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="plasticWeightKg">Plastic diverted (kg)</Label>
@@ -309,7 +354,8 @@ export function ProductForm({ productId, initial, existingCategories = [] }: Pro
       <div className="space-y-1.5">
         <Label>Rooms</Label>
         <p className="text-xs text-muted-foreground">
-          Which room(s) this fits — a piece can belong to more than one.
+          Which room(s) this fits — a piece can belong to more than one. Leave every box unchecked
+          if it fits anywhere; that&apos;s saved as fitting all rooms automatically.
         </p>
         <div className="flex flex-wrap gap-4 pt-1">
           {CATEGORIES.map((room) => (
