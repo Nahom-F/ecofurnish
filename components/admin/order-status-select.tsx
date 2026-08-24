@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateOrderStatus } from "@/app/admin/actions";
-import { ORDER_STATUSES } from "@/lib/orders";
+import { ORDER_STATUSES } from "@/lib/order-statuses";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",

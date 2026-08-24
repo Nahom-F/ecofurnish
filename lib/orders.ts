@@ -2,18 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
+import { ORDER_STATUSES } from "@/lib/order-statuses";
 
-export const ORDER_STATUSES = [
-  "pending",
-  "processing",
-  "ready_for_delivery",
-  "on_the_road",
-  "near_destination",
-  "delivered",
-  "cancelled",
-] as const;
-
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export { ORDER_STATUSES, type OrderStatus } from "@/lib/order-statuses";
 
 /**
  * Shared status-transition core, used by both the admin panel's manual
