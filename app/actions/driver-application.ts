@@ -3,8 +3,7 @@
 import { db } from "@/db";
 import { driverApplications } from "@/db/schema";
 import { sendDriverApplicationReceivedEmail } from "@/lib/email";
-
-export const VEHICLE_TYPES = ["Bicycle", "Motorcycle", "Car", "On Foot"] as const;
+import { VEHICLE_TYPES } from "@/lib/vehicle-types";
 
 export interface DriverApplicationInput {
   fullName: string;

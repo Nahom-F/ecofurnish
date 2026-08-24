@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { verifyCaptcha } from "@/app/actions/captcha";
-import { submitDriverApplication, VEHICLE_TYPES } from "@/app/actions/driver-application";
+import { submitDriverApplication } from "@/app/actions/driver-application";
+import { VEHICLE_TYPES } from "@/lib/vehicle-types";
 
 const EMPTY_FORM = {
   fullName: "",
