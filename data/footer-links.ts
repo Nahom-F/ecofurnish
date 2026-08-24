@@ -24,6 +24,10 @@ export const FOOTER_LINKS = {
       href: "/contact",
     },
     {
+      title: "Drive for Us",
+      href: "/drive",
+    },
+    {
       title: "Privacy Policy",
       href: "/privacy",
     },
