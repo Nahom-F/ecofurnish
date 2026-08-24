@@ -11,16 +11,6 @@ function appUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
-// Shown at the bottom of every email sent to a customer (not the
-// owner-facing ones like contact-form/low-stock alerts, which land in an
-// inbox we already control). Resend's shared sending domain means first
-// emails to a given address sometimes land in spam — this nudges people to
-// check there, and marking it "not spam" also helps whatever we send that
-// same person next actually reach their inbox.
-const SPAM_NOTE_TEXT =
-  'Didn\'t see this in your inbox? Check your spam or junk folder — marking it "not spam" helps future emails land there directly.';
-const SPAM_NOTE_HTML = `<p style="color:#9a9890;font-size:12px;margin-top:16px;">Didn't see this in your inbox? Check your spam or junk folder — marking it "not spam" helps future emails land there directly.</p>`;
-
 export async function sendNewsletterWelcomeEmail(toEmail: string) {
   if (!resend) {
     console.warn("RESEND_API_KEY is not set — newsletter welcome email was not sent.");
@@ -40,7 +30,7 @@ export async function sendNewsletterWelcomeEmail(toEmail: string) {
         "List-Unsubscribe": `<${unsubscribeUrl}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
-      text: `You're subscribed!\n\nThanks for joining the EcoFurnish newsletter — expect the occasional email about new pieces, offers, and what your plastic-diverted total is doing for the planet.\n\nUnsubscribe: ${unsubscribeUrl}\n\n${SPAM_NOTE_TEXT}`,
+      text: `You're subscribed!\n\nThanks for joining the EcoFurnish newsletter — expect the occasional email about new pieces, offers, and what your plastic-diverted total is doing for the planet.\n\nUnsubscribe: ${unsubscribeUrl}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">You're subscribed!</h2>
@@ -51,7 +41,6 @@ export async function sendNewsletterWelcomeEmail(toEmail: string) {
           <p style="color:#9a9890;font-size:12px;margin-top:32px;border-top:1px solid #e0ddd0;padding-top:16px;">
             <a href="${unsubscribeUrl}" style="color:#9a9890;">Unsubscribe</a>
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -72,7 +61,7 @@ export async function sendVerificationEmail(toEmail: string, url: string) {
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Verify your EcoFurnish email",
-      text: `Verify your email\n\nClick the link below to verify your email address and activate your EcoFurnish account.\n\n${url}\n\n${SPAM_NOTE_TEXT}`,
+      text: `Verify your email\n\nClick the link below to verify your email address and activate your EcoFurnish account.\n\n${url}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">Verify your email</h2>
@@ -87,7 +76,6 @@ export async function sendVerificationEmail(toEmail: string, url: string) {
           <p style="color:#6b6a5c;font-size:13px;">
             If the button doesn't work, copy and paste this link: ${url}
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -106,7 +94,7 @@ export async function sendResetPasswordEmail(toEmail: string, url: string) {
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Reset your EcoFurnish password",
-      text: `Reset your password\n\nSomeone requested a password reset for this EcoFurnish account. If that was you, use the link below — it expires soon.\n\n${url}\n\nIf this wasn't you, ignore this email — your password hasn't been changed.\n\n${SPAM_NOTE_TEXT}`,
+      text: `Reset your password\n\nSomeone requested a password reset for this EcoFurnish account. If that was you, use the link below — it expires soon.\n\n${url}\n\nIf this wasn't you, ignore this email — your password hasn't been changed.`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">Reset your password</h2>
@@ -122,7 +110,6 @@ export async function sendResetPasswordEmail(toEmail: string, url: string) {
           <p style="color:#6b6a5c;font-size:13px;">
             If this wasn't you, ignore this email — your password hasn't been changed.
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -141,7 +128,7 @@ export async function sendDeleteAccountEmail(toEmail: string, url: string) {
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Confirm account deletion",
-      text: `Confirm account deletion\n\nSomeone requested to permanently delete this EcoFurnish account. If that was you, use the link below to confirm — this can't be undone.\n\n${url}\n\nIf this wasn't you, ignore this email — your account is safe.\n\n${SPAM_NOTE_TEXT}`,
+      text: `Confirm account deletion\n\nSomeone requested to permanently delete this EcoFurnish account. If that was you, use the link below to confirm — this can't be undone.\n\n${url}\n\nIf this wasn't you, ignore this email — your account is safe.`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#b3432d;">Confirm account deletion</h2>
@@ -157,7 +144,6 @@ export async function sendDeleteAccountEmail(toEmail: string, url: string) {
           <p style="color:#6b6a5c;font-size:13px;">
             If this wasn't you, ignore this email — your account is safe.
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -177,7 +163,7 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Welcome to EcoFurnish",
-      text: `Welcome, ${name.split(" ")[0]}!\n\nYour EcoFurnish account is ready. Browse the catalog, save favorites to your wishlist, and your orders will show up in your account once you check out.\n\n${SPAM_NOTE_TEXT}`,
+      text: `Welcome, ${name.split(" ")[0]}!\n\nYour EcoFurnish account is ready. Browse the catalog, save favorites to your wishlist, and your orders will show up in your account once you check out.`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">Welcome, ${name.split(" ")[0]}!</h2>
@@ -185,7 +171,6 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
             Your EcoFurnish account is ready. Browse the catalog, save favorites to your
             wishlist, and your orders will show up in your account once you check out.
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -205,7 +190,7 @@ export async function sendPasswordChangedEmail(toEmail: string, name: string) {
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Your EcoFurnish password was changed",
-      text: `Password changed\n\nHi ${name.split(" ")[0]}, this confirms your EcoFurnish account password was just changed.\n\nIf this wasn't you, contact us immediately through the site's contact page.\n\n${SPAM_NOTE_TEXT}`,
+      text: `Password changed\n\nHi ${name.split(" ")[0]}, this confirms your EcoFurnish account password was just changed.\n\nIf this wasn't you, contact us immediately through the site's contact page.`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">Password changed</h2>
@@ -215,7 +200,6 @@ export async function sendPasswordChangedEmail(toEmail: string, name: string) {
           <p style="color:#6b6a5c;font-size:14px;">
             If this wasn't you, contact us immediately through the site's contact page.
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -238,7 +222,7 @@ export async function sendExistingAccountSignUpAttemptEmail(toEmail: string, nam
       from: FROM_ADDRESS,
       to: toEmail,
       subject: "Someone tried to sign up with your EcoFurnish email",
-      text: `Hi ${name.split(" ")[0]},\n\nSomeone just tried to create a new EcoFurnish account using this email address, which already has an account.\n\nIf that was you, you don't need a new account — just sign in: ${signInUrl}\n\nForgot your password? Reset it here: ${forgotPasswordUrl}\n\nIf this wasn't you, no action is needed — your account is safe and no new account was created.\n\n${SPAM_NOTE_TEXT}`,
+      text: `Hi ${name.split(" ")[0]},\n\nSomeone just tried to create a new EcoFurnish account using this email address, which already has an account.\n\nIf that was you, you don't need a new account — just sign in: ${signInUrl}\n\nForgot your password? Reset it here: ${forgotPasswordUrl}\n\nIf this wasn't you, no action is needed — your account is safe and no new account was created.`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">Someone tried to sign up with your email</h2>
@@ -260,7 +244,6 @@ export async function sendExistingAccountSignUpAttemptEmail(toEmail: string, nam
           <p style="color:#6b6a5c;font-size:13px;margin-top:16px;border-top:1px solid #e0ddd0;padding-top:16px;">
             If this wasn't you, no action is needed — your account is safe and no new account was created.
           </p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
@@ -359,11 +342,10 @@ export async function sendOrderConfirmationEmail(input: OrderConfirmationEmailIn
       <p style="color:#6b6a5c;font-size:14px;margin-top:24px;">
         We'll be in touch about delivery. Thanks for supporting sustainable furniture.
       </p>
-      ${SPAM_NOTE_HTML}
     </div>
   `;
 
-  const text = `Thanks for your order, ${input.customerName.split(" ")[0]}!\n\nYour EcoFurnish order #${input.orderId.slice(0, 8)} is confirmed.\n\n${itemsText}\n\nTotal: Br${parseFloat(input.totalAmount).toFixed(2)}\n\nWe'll be in touch about delivery. Thanks for supporting sustainable furniture.\n\n${SPAM_NOTE_TEXT}`;
+  const text = `Thanks for your order, ${input.customerName.split(" ")[0]}!\n\nYour EcoFurnish order #${input.orderId.slice(0, 8)} is confirmed.\n\n${itemsText}\n\nTotal: Br${parseFloat(input.totalAmount).toFixed(2)}\n\nWe'll be in touch about delivery. Thanks for supporting sustainable furniture.`;
 
   try {
     await resend.emails.send({
@@ -420,13 +402,23 @@ const STATUS_EMAIL_COPY = {
     heading: "Your order is confirmed",
     body: () => "We've started getting your order ready.",
   },
-  shipped: {
-    subject: "Your order has shipped",
-    heading: "Your order has shipped",
+  ready_for_delivery: {
+    subject: "Your order is ready for delivery",
+    heading: "Ready for delivery",
+    body: () => "Your order is packed and waiting for a driver to pick it up.",
+  },
+  on_the_road: {
+    subject: "Your order is on the way",
+    heading: "On the way",
     body: (trackingNote?: string | null) =>
       trackingNote
-        ? `Your order is on its way. Tracking: ${trackingNote}`
-        : "Your order is on its way.",
+        ? `Your driver is on the road. Tracking: ${trackingNote}`
+        : "Your driver is on the road.",
+  },
+  near_destination: {
+    subject: "Your order is almost there",
+    heading: "Almost there",
+    body: () => "Your driver is nearly at your delivery address — have your delivery PIN ready.",
   },
   delivered: {
     subject: "Your order has been delivered",
@@ -468,17 +460,157 @@ export async function sendOrderStatusUpdateEmail(
       from: FROM_ADDRESS,
       to: toEmail,
       subject: `${copy.subject} — order #${orderId.slice(0, 8)}`,
-      text: `${copy.heading}\n\nHi ${firstName}, ${bodyText}\n\nOrder #${orderId.slice(0, 8)}\n\n${SPAM_NOTE_TEXT}`,
+      text: `${copy.heading}\n\nHi ${firstName}, ${bodyText}\n\nOrder #${orderId.slice(0, 8)}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
           <h2 style="color:#33472e;">${copy.heading}</h2>
           <p style="color:#3a3f38;">Hi ${firstName}, ${bodyText}</p>
           <p style="color:#6b6a5c;font-size:13px;">Order #${orderId.slice(0, 8)}</p>
-          ${SPAM_NOTE_HTML}
         </div>
       `,
     });
   } catch (err) {
     console.error("Failed to send order status email:", err);
+  }
+}
+
+// Used for both the admin inbox's reply-in-thread feature and the
+// broadcast page's "message one specific customer" option — anywhere an
+// admin is sending a single freeform message to one address, rather than
+// a templated transactional email or a batch send.
+export async function sendAdminMessage(toEmail: string, subject: string, body: string) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — message was not sent.");
+    return { success: false as const, error: "Email sending isn't configured." };
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject,
+      text: body,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <div style="color:#3a3f38;white-space:pre-wrap;">${body.replace(/\n/g, "<br />")}</div>
+        </div>
+      `,
+    });
+    if (error) {
+      console.error("Admin message failed:", error);
+      return { success: false as const, error: "Resend rejected the message." };
+    }
+    return { success: true as const };
+  } catch (err) {
+    console.error("Admin message threw:", err);
+    return { success: false as const, error: "Something went wrong sending this." };
+  }
+}
+
+/** Fired right after someone submits the driver application form —
+ * just a "we got it" receipt, not the approve/reject decision itself
+ * (see sendDriverApplicationDecisionEmail below for that). */
+export async function sendDriverApplicationReceivedEmail(toEmail: string, fullName: string) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — driver application receipt was not sent.");
+    return;
+  }
+  const firstName = fullName.split(" ")[0];
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: "We got your driver application",
+      text: `Hi ${firstName}, thanks for applying to drive for EcoFurnish. A dispatcher will review your application and email you with a decision soon.`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">Application received</h2>
+          <p style="color:#3a3f38;">
+            Hi ${firstName}, thanks for applying to drive for EcoFurnish. A dispatcher will
+            review your application and email you with a decision soon.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send driver application receipt:", err);
+  }
+}
+
+/** Fired when a dispatcher approves or rejects a driver application. */
+export async function sendDriverApplicationDecisionEmail(
+  toEmail: string,
+  fullName: string,
+  approved: boolean
+) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — driver application decision email was not sent.");
+    return;
+  }
+  const firstName = fullName.split(" ")[0];
+  const heading = approved ? "You're approved to drive" : "Application update";
+  const body = approved
+    ? "Your driver application has been approved. You'll get a link by email whenever you're assigned a delivery — no account or app install needed."
+    : "Thanks for your interest, but we're not able to approve your driver application at this time.";
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: heading,
+      text: `Hi ${firstName}, ${body}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">${heading}</h2>
+          <p style="color:#3a3f38;">Hi ${firstName}, ${body}</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send driver application decision email:", err);
+  }
+}
+
+/** Fired the moment a dispatcher assigns a driver to an order. Sends the
+ * buyer their delivery PIN — never printed on the package — which the
+ * driver has to collect from them in person to submit a "delivered"
+ * claim (see deliveryAssignments.buyerPin in db/schema.ts). */
+export async function sendDeliveryAssignedEmail(
+  toEmail: string,
+  customerName: string,
+  orderId: string,
+  buyerPin: string
+) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — delivery assignment email was not sent.");
+    return;
+  }
+  const firstName = customerName.split(" ")[0];
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: `Your delivery PIN — order #${orderId.slice(0, 8)}`,
+      text: `Hi ${firstName}, a driver has been assigned to your order. Your delivery PIN is ${buyerPin} — give this to the driver only once your order actually arrives, so they can confirm the handoff. Don't share it before then.\n\nOrder #${orderId.slice(0, 8)}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">A driver is on the way</h2>
+          <p style="color:#3a3f38;">Hi ${firstName}, a driver has been assigned to your order.</p>
+          <p style="margin:24px 0; text-align:center;">
+            <span style="display:inline-block;background:#f0efe6;color:#33472e;font-size:28px;font-weight:700;letter-spacing:4px;padding:12px 24px;border-radius:8px;">
+              ${buyerPin}
+            </span>
+          </p>
+          <p style="color:#3a3f38;">
+            Give this PIN to the driver <strong>only once your order actually arrives</strong>,
+            so they can confirm the handoff. Don't share it before then.
+          </p>
+          <p style="color:#6b6a5c;font-size:13px;">Order #${orderId.slice(0, 8)}</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send delivery assignment email:", err);
   }
 }

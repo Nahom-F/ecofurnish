@@ -1,10 +1,21 @@
-import { Check, Package, PackageCheck, ShoppingBag, Truck, XCircle } from "lucide-react";
+import {
+  Check,
+  Home,
+  Navigation,
+  Package,
+  PackageCheck,
+  ShoppingBag,
+  Truck,
+  XCircle,
+} from "lucide-react";
 
 const STEPS = [
   { key: "pending", label: "Placed", icon: ShoppingBag },
   { key: "processing", label: "Processing", icon: Package },
-  { key: "shipped", label: "Shipped", icon: Truck },
-  { key: "delivered", label: "Delivered", icon: PackageCheck },
+  { key: "ready_for_delivery", label: "Ready for Delivery", icon: PackageCheck },
+  { key: "on_the_road", label: "On the Road", icon: Truck },
+  { key: "near_destination", label: "Near You", icon: Navigation },
+  { key: "delivered", label: "Delivered", icon: Home },
 ] as const;
 
 export function OrderTimeline({
@@ -73,7 +84,7 @@ export function OrderTimeline({
                   )}
                 </span>
                 <span
-                  className={`max-w-[4.5rem] text-[0.7rem] font-medium sm:max-w-none sm:text-xs ${
+                  className={`max-w-[3.4rem] text-[0.6rem] font-medium leading-tight sm:max-w-[4.5rem] sm:text-[0.7rem] md:max-w-none md:text-xs ${
                     done || current ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
@@ -85,7 +96,7 @@ export function OrderTimeline({
         </div>
       </div>
 
-      {trackingNote && currentIndex >= STEPS.findIndex((s) => s.key === "shipped") && (
+      {trackingNote && currentIndex >= STEPS.findIndex((s) => s.key === "on_the_road") && (
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Tracking: <span className="font-medium text-foreground">{trackingNote}</span>
         </p>

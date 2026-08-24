@@ -10,8 +10,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateOrderStatus } from "@/app/admin/actions";
+import { ORDER_STATUSES } from "@/lib/orders";
 
-const STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"];
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  processing: "Processing",
+  ready_for_delivery: "Ready for Delivery",
+  on_the_road: "On the Road",
+  near_destination: "Near Destination",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
 
 export function OrderStatusSelect({
   orderId,
@@ -40,13 +49,13 @@ export function OrderStatusSelect({
 
   return (
     <Select value={value} onValueChange={handleChange} disabled={saving}>
-      <SelectTrigger className="w-36 capitalize">
-        <SelectValue />
+      <SelectTrigger className="w-44">
+        <SelectValue>{STATUS_LABELS[value] ?? value}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {STATUSES.map((s) => (
-          <SelectItem key={s} value={s} className="capitalize">
-            {s}
+        {ORDER_STATUSES.map((s) => (
+          <SelectItem key={s} value={s}>
+            {STATUS_LABELS[s] ?? s}
           </SelectItem>
         ))}
       </SelectContent>

@@ -54,8 +54,12 @@ export const orders = pgTable("orders", {
   // was applied and why.
   discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
   discountNote: text("discount_note"),
-  // pending -> processing -> shipped -> delivered (or cancelled) — see
-  // VALID_STATUSES in app/admin/actions.ts, the actual source of truth
+  // pending -> processing -> ready_for_delivery -> on_the_road ->
+  // near_destination -> delivered (or cancelled at any point) — see
+  // ORDER_STATUSES in lib/orders.ts, the actual source of truth. The
+  // three delivery-lifecycle stages are normally driven by the
+  // dispatcher approving a driver's claim (see deliveryClaims), not set
+  // directly, though the admin panel can still override any status.
   status: text("status").notNull().default("pending"),
   // unpaid until Chapa confirms the transaction server-to-server
   // (see verifyChapaTransaction / confirmPayment)
@@ -160,6 +164,86 @@ export const referralRewards = pgTable(
     uniqueIndex("referral_rewards_user_milestone_idx").on(table.userId, table.milestone),
   ]
 );
+
+// One row per person who submits the driver application form. There is
+// no persistent driver account/login — an approved row here doubles as
+// the driver's identity for delivery assignment and flag tracking. A
+// driver reaches their status portal via a one-time magic link scoped to
+// a single assignment (see deliveryAssignments.magicToken below), never
+// via sign-in.
+export const driverApplications = pgTable("driver_applications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email"),
+  city: text("city").notNull(),
+  vehicleType: text("vehicle_type").notNull(), // "Bicycle" | "Motorcycle" | "Car" | "On Foot"
+  notes: text("notes"),
+  // pending -> approved | rejected. An approved row can later gain a
+  // blacklistedAt once flagCount below hits the 3-strike threshold.
+  status: text("status").notNull().default("pending"),
+  // Incremented each time a dispatcher declines one of this driver's
+  // delivery claims (see deliveryClaims below). 3 flags auto-blacklists.
+  flagCount: integer("flag_count").default(0).notNull(),
+  blacklistedAt: timestamp("blacklisted_at"),
+  reviewNote: text("review_note"),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// One row per driver assigned to an order's delivery. Created by a
+// dispatcher once an order is ready to go out — this is what generates
+// the magic link a driver uses to reach their status portal.
+export const deliveryAssignments = pgTable("delivery_assignments", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  orderId: text("order_id").notNull().references(() => orders.id),
+  driverId: text("driver_id").notNull().references(() => driverApplications.id),
+  // active -> completed (once a "delivered" claim is approved), or
+  // cancelled if a dispatcher reassigns the order to a different driver
+  // mid-delivery.
+  status: text("status").notNull().default("active"),
+  // Long random bearer token embedded in the driver's status-portal
+  // link — scoped to this one assignment only.
+  magicToken: text("magic_token").notNull().unique(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(),
+  // Delivery target coordinates: started from an auto-geocode of the
+  // shipping address, then confirmed/dragged into place by the
+  // dispatcher at assignment time. Snapshotted here (not read live off
+  // the order) so a later address edit can't shift the target under an
+  // in-progress delivery.
+  deliveryLat: numeric("delivery_lat", { precision: 9, scale: 6 }).notNull(),
+  deliveryLng: numeric("delivery_lng", { precision: 9, scale: 6 }).notNull(),
+  // Emailed to the buyer at assignment time. The driver collects this
+  // from the buyer in person and enters it to submit a "delivered"
+  // claim — the paper trail against false "never received it" disputes.
+  buyerPin: text("buyer_pin").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// One row per driver button-press on their status portal (started
+// driving / near destination / delivered). Never changes orders.status
+// directly — always lands here as "pending" for a dispatcher to approve
+// or decline first (see app/dispatcher/actions.ts).
+export const deliveryClaims = pgTable("delivery_claims", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  assignmentId: text("assignment_id").notNull().references(() => deliveryAssignments.id),
+  claimType: text("claim_type").notNull(), // "started_driving" | "near_destination" | "delivered"
+  // One-time location check, captured for "near_destination" and
+  // "delivered" claims only — the driver's reported coordinates and
+  // their Haversine distance from the assignment's delivery target.
+  // Shown to the dispatcher as a verification signal, not an automatic
+  // pass/fail gate (GPS accuracy varies too much to hard-block on it).
+  driverLat: numeric("driver_lat", { precision: 9, scale: 6 }),
+  driverLng: numeric("driver_lng", { precision: 9, scale: 6 }),
+  distanceMeters: numeric("distance_meters", { precision: 10, scale: 1 }),
+  // Only set for "delivered" claims.
+  pinEntered: text("pin_entered"),
+  pinMatched: boolean("pin_matched"),
+  status: text("status").notNull().default("pending"), // pending | approved | declined
+  dispatcherNote: text("dispatcher_note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+});
 
 // Inbound emails to the Resend-managed domain (support@, hello@, etc.),
 // landed here by the webhook at app/api/resend/webhook/route.ts. Resend

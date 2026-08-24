@@ -6,7 +6,8 @@ import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { products, orders, inboundEmails } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendOrderStatusUpdateEmail } from "@/lib/email";
+import { sendAdminMessage } from "@/lib/email";
+import { applyOrderStatus } from "@/lib/orders";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // stay comfortably under Vercel's 4.5MB server-upload cap
@@ -106,30 +107,13 @@ export async function deleteProduct(id: string) {
   revalidatePath("/");
 }
 
-const VALID_STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"];
-
+// This is a manual override — normal delivery-lifecycle transitions
+// (ready_for_delivery -> ... -> delivered) are meant to happen through a
+// dispatcher approving a driver's claim instead (see
+// app/dispatcher/actions.ts), which calls the same applyOrderStatus core.
 export async function updateOrderStatus(orderId: string, status: string) {
   await requireAdmin();
-  if (!VALID_STATUSES.includes(status)) {
-    throw new Error(`Invalid status: ${status}`);
-  }
-
-  const [existing] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-  if (!existing) throw new Error("Order not found");
-
-  await db.update(orders).set({ status }).where(eq(orders.id, orderId));
-
-  // Only notify on an actual change — re-selecting the same status
-  // (nothing to tell the customer) shouldn't re-send anything.
-  if (existing.status !== status) {
-    await sendOrderStatusUpdateEmail(
-      existing.customerEmail,
-      existing.customerName,
-      orderId,
-      status,
-      existing.trackingNote
-    );
-  }
+  await applyOrderStatus(orderId, status);
 
   revalidatePath("/admin/orders");
   revalidatePath(`/order-confirmation/${orderId}`);
@@ -150,4 +134,23 @@ export async function markInboundEmailRead(id: string, read: boolean) {
   await requireAdmin();
   await db.update(inboundEmails).set({ read }).where(eq(inboundEmails.id, id));
   revalidatePath("/admin/inbox");
+}
+
+export async function sendInboxReply(inboundEmailId: string, body: string) {
+  await requireAdmin();
+  if (!body.trim()) return { success: false as const, error: "Reply can't be empty." };
+
+  const [email] = await db
+    .select()
+    .from(inboundEmails)
+    .where(eq(inboundEmails.id, inboundEmailId));
+  if (!email) return { success: false as const, error: "Original email not found." };
+
+  // Avoids "Re: Re: Re: ..." piling up if this thread's already been
+  // replied to before.
+  const subject = email.subject?.trim().toLowerCase().startsWith("re:")
+    ? email.subject
+    : `Re: ${email.subject || "(no subject)"}`;
+
+  return sendAdminMessage(email.fromEmail, subject!, body);
 }

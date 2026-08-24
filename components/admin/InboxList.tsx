@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MailOpen, ChevronDown, ChevronUp } from "lucide-react";
-import { markInboundEmailRead } from "@/app/admin/actions";
+import { Mail, MailOpen, ChevronDown, ChevronUp, Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { markInboundEmailRead, sendInboxReply } from "@/app/admin/actions";
 
 interface InboundEmail {
   id: string;
@@ -18,6 +21,11 @@ interface InboundEmail {
 export function InboxList({ emails }: { emails: InboundEmail[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [localEmails, setLocalEmails] = useState(emails);
+  // Keyed by email id so drafts for different threads don't collide if
+  // more than one gets opened/typed-into during a session.
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
 
   async function toggleOpen(email: InboundEmail) {
     const opening = openId !== email.id;
@@ -31,6 +39,27 @@ export function InboxList({ emails }: { emails: InboundEmail[] }) {
         // Not worth a toast for this — worst case it shows unread again
         // on next page load, no data lost.
       }
+    }
+  }
+
+  async function handleReply(email: InboundEmail) {
+    const body = (replyDrafts[email.id] ?? "").trim();
+    if (!body) return;
+
+    setSendingId(email.id);
+    try {
+      const result = await sendInboxReply(email.id, body);
+      if (result.success) {
+        toast.success(`Reply sent to ${email.fromEmail}`);
+        setReplyDrafts((prev) => ({ ...prev, [email.id]: "" }));
+        setSentIds((prev) => new Set(prev).add(email.id));
+      } else {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("Couldn't send that — please try again.");
+    } finally {
+      setSendingId(null);
     }
   }
 
@@ -88,14 +117,34 @@ export function InboxList({ emails }: { emails: InboundEmail[] }) {
                     {email.text || "(empty message)"}
                   </p>
                 )}
-                <a
-                  href={`mailto:${email.fromEmail}?subject=${encodeURIComponent(
-                    "Re: " + (email.subject || "")
-                  )}`}
-                  className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
-                >
-                  Reply via email
-                </a>
+                <div className="mt-4 space-y-2">
+                  <Textarea
+                    value={replyDrafts[email.id] ?? ""}
+                    onChange={(e) =>
+                      setReplyDrafts((prev) => ({ ...prev, [email.id]: e.target.value }))
+                    }
+                    placeholder={`Reply to ${email.fromEmail}…`}
+                    rows={4}
+                    className="bg-background text-sm"
+                  />
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      onClick={() => handleReply(email)}
+                      disabled={sendingId === email.id || !(replyDrafts[email.id] ?? "").trim()}
+                    >
+                      {sendingId === email.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      Send reply
+                    </Button>
+                    {sentIds.has(email.id) && (
+                      <span className="text-xs text-muted-foreground">Sent</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

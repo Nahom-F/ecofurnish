@@ -9,7 +9,11 @@ import { requireAdmin } from "@/lib/require-admin";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_ADDRESS = "EcoFurnish <admin@ecofurnish.abrdns.com>";
 
-export type BroadcastAudience = "all-customers" | "subscribers";
+export type BroadcastAudience =
+  | "all-customers"
+  | "subscribers"
+  | "single-customer"
+  | "custom-address";
 
 // Better Auth manages the "user" table itself (via its own raw `pg` Pool
 // in lib/auth.ts, outside db/schema.ts), so there's no Drizzle table
@@ -22,6 +26,16 @@ async function getAllCustomerEmails(): Promise<{ email: string; name: string }[]
     sql`SELECT email, name FROM "user" WHERE email IS NOT NULL`
   );
   return result.rows;
+}
+
+// Exposed for the "message one specific customer" picker in
+// BroadcastForm — same query as above, just under a name that makes
+// sense as a public export (getAllCustomerEmails predates that use case
+// and returning counts-only felt like the more private-sounding name to
+// keep internal).
+export async function getAllCustomers() {
+  await requireAdmin();
+  return getAllCustomerEmails();
 }
 
 export async function getBroadcastAudienceCounts() {
@@ -67,10 +81,13 @@ export async function sendBroadcastEmail({
   subject,
   body,
   audience,
+  recipientEmail,
 }: {
   subject: string;
   body: string;
   audience: BroadcastAudience | "test";
+  // Required when audience is "single-customer" — ignored otherwise.
+  recipientEmail?: string;
 }) {
   const session = await requireAdmin();
 
@@ -89,6 +106,18 @@ export async function sendBroadcastEmail({
   } else if (audience === "subscribers") {
     recipients = await db.select({ email: newsletterSubscribers.email }).from(newsletterSubscribers);
     unsubscribable = true;
+  } else if (audience === "single-customer") {
+    if (!recipientEmail) {
+      return { success: false as const, error: "No customer selected." };
+    }
+    recipients = [{ email: recipientEmail }];
+  } else if (audience === "custom-address") {
+    // No user-table lookup for this one — could be anyone. Just a sanity
+    // check against an obvious typo, not real RFC 5322 validation.
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      return { success: false as const, error: "Enter a valid email address." };
+    }
+    recipients = [{ email: recipientEmail }];
   } else {
     recipients = await getAllCustomerEmails();
   }

@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
   processing: "Processing",
-  shipped: "Shipped",
+  ready_for_delivery: "Ready for Delivery",
+  on_the_road: "On the Road",
+  near_destination: "Near You",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
