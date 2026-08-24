@@ -507,6 +507,66 @@ export async function sendAdminMessage(toEmail: string, subject: string, body: s
   }
 }
 
+/** Fired the moment an admin promotes an existing account to dispatcher
+ * from /admin/dispatchers. Immediate — not an invite-and-accept flow —
+ * this is just the heads-up, matching how admin role assignment already
+ * works (make-admin.ts is instant too). */
+export async function sendDispatcherPromotedEmail(toEmail: string, name: string) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — dispatcher promotion email was not sent.");
+    return;
+  }
+  const firstName = name.split(" ")[0];
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: "You've been made a dispatcher on EcoFurnish",
+      text: `Hi ${firstName}, an admin has given your account dispatcher access on EcoFurnish. You can now review driver applications, assign deliveries, and manage the delivery pipeline — just sign in as usual and you'll see the dispatcher tools.`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">You're now a dispatcher</h2>
+          <p style="color:#3a3f38;">
+            Hi ${firstName}, an admin has given your account dispatcher access on EcoFurnish.
+            You can now review driver applications, assign deliveries, and manage the delivery
+            pipeline — just sign in as usual and you'll see the dispatcher tools.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send dispatcher promotion email:", err);
+  }
+}
+
+/** Fired when an admin removes someone's dispatcher access. */
+export async function sendDispatcherRemovedEmail(toEmail: string, name: string) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — dispatcher removal email was not sent.");
+    return;
+  }
+  const firstName = name.split(" ")[0];
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: "Your dispatcher access has been removed",
+      text: `Hi ${firstName}, your dispatcher access on EcoFurnish has been removed. Your account is otherwise unaffected.`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">Dispatcher access removed</h2>
+          <p style="color:#3a3f38;">
+            Hi ${firstName}, your dispatcher access on EcoFurnish has been removed. Your account
+            is otherwise unaffected.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send dispatcher removal email:", err);
+  }
+}
+
 /** Fired right after someone submits the driver application form —
  * just a "we got it" receipt, not the approve/reject decision itself
  * (see sendDriverApplicationDecisionEmail below for that). */

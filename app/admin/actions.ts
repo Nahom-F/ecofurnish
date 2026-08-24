@@ -1,12 +1,13 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { products, orders, inboundEmails } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendOrderStatusUpdateEmail, sendAdminMessage } from "@/lib/email";
+import { sendAdminMessage, sendDispatcherPromotedEmail, sendDispatcherRemovedEmail } from "@/lib/email";
+import { applyOrderStatus } from "@/lib/orders";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // stay comfortably under Vercel's 4.5MB server-upload cap
@@ -53,14 +54,10 @@ export interface ProductInput {
 
 function validateProductInput(input: ProductInput) {
   if (!input.name.trim()) throw new Error("Name is required.");
-  if (!input.description.trim()) throw new Error("Description is required.");
-  if (!input.imageUrl || input.imageUrl === "/placeholder.jpg") {
-    throw new Error("A cover photo is required.");
-  }
   if (!input.category.trim()) throw new Error("Category is required.");
   const price = parseFloat(input.price);
-  if (!Number.isFinite(price) || price <= 0) {
-    throw new Error("Price must be a valid number greater than 0.");
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error("Price must be a valid, non-negative number.");
   }
   if (!Number.isInteger(input.stock) || input.stock < 0) {
     throw new Error("Stock must be a non-negative whole number.");
@@ -110,30 +107,13 @@ export async function deleteProduct(id: string) {
   revalidatePath("/");
 }
 
-const VALID_STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"];
-
+// This is a manual override — normal delivery-lifecycle transitions
+// (ready_for_delivery -> ... -> delivered) are meant to happen through a
+// dispatcher approving a driver's claim instead (see
+// app/dispatcher/actions.ts), which calls the same applyOrderStatus core.
 export async function updateOrderStatus(orderId: string, status: string) {
   await requireAdmin();
-  if (!VALID_STATUSES.includes(status)) {
-    throw new Error(`Invalid status: ${status}`);
-  }
-
-  const [existing] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-  if (!existing) throw new Error("Order not found");
-
-  await db.update(orders).set({ status }).where(eq(orders.id, orderId));
-
-  // Only notify on an actual change — re-selecting the same status
-  // (nothing to tell the customer) shouldn't re-send anything.
-  if (existing.status !== status) {
-    await sendOrderStatusUpdateEmail(
-      existing.customerEmail,
-      existing.customerName,
-      orderId,
-      status,
-      existing.trackingNote
-    );
-  }
+  await applyOrderStatus(orderId, status);
 
   revalidatePath("/admin/orders");
   revalidatePath(`/order-confirmation/${orderId}`);
@@ -173,4 +153,53 @@ export async function sendInboxReply(inboundEmailId: string, body: string) {
     : `Re: ${email.subject || "(no subject)"}`;
 
   return sendAdminMessage(email.fromEmail, subject!, body);
+}
+
+// Better Auth manages the "user" table itself (outside db/schema.ts), so
+// this queries it directly by name rather than through a Drizzle table
+// object — same reasoning as getAllCustomerEmails in app/actions/broadcast.ts.
+export type DispatcherCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+};
+
+// Deliberately excludes admins — promoting/demoting an admin isn't
+// something this UI should be able to do at all (that stays on the
+// `pnpm make-admin` CLI, a higher-friction path on purpose for the most
+// powerful role). This only ever surfaces "user" <-> "dispatcher".
+export async function getUsersForDispatcherManagement() {
+  await requireAdmin();
+  const result = await db.execute<DispatcherCandidate>(
+    sql`SELECT id, name, email, role FROM "user" WHERE email IS NOT NULL AND role IS DISTINCT FROM 'admin' ORDER BY name`
+  );
+  return result.rows;
+}
+
+export async function promoteToDispatcher(userId: string) {
+  await requireAdmin();
+  // The role guard here (only "user" or null) is what actually stops
+  // this from ever touching an admin account, even if the page's own
+  // filtering were somehow bypassed.
+  const result = await db.execute<DispatcherCandidate>(
+    sql`UPDATE "user" SET role = 'dispatcher' WHERE id = ${userId} AND (role IS NULL OR role = 'user') RETURNING id, name, email, role`
+  );
+  const user = result.rows[0];
+  if (!user) throw new Error("User not found, or already has a different role.");
+
+  await sendDispatcherPromotedEmail(user.email, user.name);
+  revalidatePath("/admin/dispatchers");
+}
+
+export async function removeDispatcherRole(userId: string) {
+  await requireAdmin();
+  const result = await db.execute<DispatcherCandidate>(
+    sql`UPDATE "user" SET role = 'user' WHERE id = ${userId} AND role = 'dispatcher' RETURNING id, name, email, role`
+  );
+  const user = result.rows[0];
+  if (!user) throw new Error("User not found, or isn't currently a dispatcher.");
+
+  await sendDispatcherRemovedEmail(user.email, user.name);
+  revalidatePath("/admin/dispatchers");
 }
