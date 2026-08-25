@@ -1,13 +1,30 @@
 "use server";
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { driverApplications, deliveryAssignments, orders } from "@/db/schema";
+import { driverApplications, deliveryAssignments, deliveryClaims, orders } from "@/db/schema";
 import { requireDispatcher } from "@/lib/require-dispatcher";
 import { sendDriverApplicationDecisionEmail, sendDeliveryAssignedEmail, sendDriverAssignmentEmail } from "@/lib/email";
 import { geocodeAddress } from "@/lib/geocode";
 import { generateMagicToken, generateBuyerPin, driverPortalUrl } from "@/lib/delivery";
+import { applyOrderStatus, type OrderStatus } from "@/lib/orders";
+
+export type PendingClaim = {
+  claimId: string;
+  claimType: string;
+  driverLat: string | null;
+  driverLng: string | null;
+  distanceMeters: string | null;
+  pinEntered: string | null;
+  pinMatched: boolean | null;
+  createdAt: Date;
+  orderId: string;
+  customerName: string;
+  driverId: string;
+  driverName: string;
+  driverFlagCount: number;
+};
 
 export type DriverApplication = typeof driverApplications.$inferSelect;
 export type AssignableOrder = typeof orders.$inferSelect;
@@ -212,4 +229,124 @@ export async function assignDriverToOrder({
   revalidatePath("/account/orders");
 
   return { success: true as const, portalUrl, magicToken };
+}
+
+// A claim's type maps 1:1 to the order status it advances to once
+// approved. "near_destination" is the same literal string on both
+// sides — coincidence of naming, not a bug.
+const CLAIM_TO_ORDER_STATUS: Record<string, OrderStatus> = {
+  started_driving: "on_the_road",
+  near_destination: "near_destination",
+  delivered: "delivered",
+};
+
+export async function getPendingClaims(): Promise<PendingClaim[]> {
+  await requireDispatcher();
+
+  return db
+    .select({
+      claimId: deliveryClaims.id,
+      claimType: deliveryClaims.claimType,
+      driverLat: deliveryClaims.driverLat,
+      driverLng: deliveryClaims.driverLng,
+      distanceMeters: deliveryClaims.distanceMeters,
+      pinEntered: deliveryClaims.pinEntered,
+      pinMatched: deliveryClaims.pinMatched,
+      createdAt: deliveryClaims.createdAt,
+      orderId: orders.id,
+      customerName: orders.customerName,
+      driverId: driverApplications.id,
+      driverName: driverApplications.fullName,
+      driverFlagCount: driverApplications.flagCount,
+    })
+    .from(deliveryClaims)
+    .innerJoin(deliveryAssignments, eq(deliveryClaims.assignmentId, deliveryAssignments.id))
+    .innerJoin(orders, eq(deliveryAssignments.orderId, orders.id))
+    .innerJoin(driverApplications, eq(deliveryAssignments.driverId, driverApplications.id))
+    .where(eq(deliveryClaims.status, "pending"))
+    .orderBy(desc(deliveryClaims.createdAt));
+}
+
+export async function approveClaim(claimId: string, dispatcherNote: string) {
+  await requireDispatcher();
+
+  // Atomic guard, same pattern as the application review actions above.
+  const [claim] = await db
+    .update(deliveryClaims)
+    .set({ status: "approved", reviewedAt: new Date(), dispatcherNote: dispatcherNote.trim() || null })
+    .where(and(eq(deliveryClaims.id, claimId), eq(deliveryClaims.status, "pending")))
+    .returning();
+  if (!claim) throw new Error("Claim not found, or already reviewed.");
+
+  const [assignment] = await db
+    .select()
+    .from(deliveryAssignments)
+    .where(eq(deliveryAssignments.id, claim.assignmentId))
+    .limit(1);
+  if (!assignment) throw new Error("Assignment not found.");
+
+  // This IS the case applyOrderStatus (lib/orders.ts) was reserved for
+  // — approving a claim is exactly when the generic per-stage email
+  // should fire, unlike assignment (which has its own richer email).
+  const newStatus = CLAIM_TO_ORDER_STATUS[claim.claimType];
+  if (newStatus) {
+    await applyOrderStatus(assignment.orderId, newStatus);
+  }
+
+  if (claim.claimType === "delivered") {
+    await db
+      .update(deliveryAssignments)
+      .set({ status: "completed" })
+      .where(eq(deliveryAssignments.id, assignment.id));
+  }
+
+  revalidatePath("/dispatcher/claims");
+  revalidatePath("/dispatcher/deliveries");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/order-confirmation/${assignment.orderId}`);
+  revalidatePath("/account/orders");
+}
+
+export async function declineClaim(claimId: string, dispatcherNote: string) {
+  await requireDispatcher();
+
+  const [claim] = await db
+    .update(deliveryClaims)
+    .set({ status: "declined", reviewedAt: new Date(), dispatcherNote: dispatcherNote.trim() || null })
+    .where(and(eq(deliveryClaims.id, claimId), eq(deliveryClaims.status, "pending")))
+    .returning();
+  if (!claim) throw new Error("Claim not found, or already reviewed.");
+
+  const [assignment] = await db
+    .select()
+    .from(deliveryAssignments)
+    .where(eq(deliveryAssignments.id, claim.assignmentId))
+    .limit(1);
+  if (!assignment) throw new Error("Assignment not found.");
+
+  // Order status is untouched on a decline — the driver just sees the
+  // dispatcherNote on their portal and can resubmit the same claim type
+  // (Phase 5's "no duplicate pending claim" guard only blocks while one
+  // is still pending; a declined one frees them to try again).
+  const [driver] = await db
+    .update(driverApplications)
+    .set({ flagCount: sql`${driverApplications.flagCount} + 1` })
+    .where(eq(driverApplications.id, assignment.driverId))
+    .returning();
+
+  // 3-strike auto-blacklist. Doesn't touch their current assignment —
+  // force-reassigning a driver mid-delivery is out of scope here (see
+  // the delivery-assignment design notes); this just stops them from
+  // being picked for anything NEW (getApprovedDrivers already filters
+  // out anyone with blacklistedAt set).
+  if (driver && driver.flagCount >= 3 && !driver.blacklistedAt) {
+    await db
+      .update(driverApplications)
+      .set({ blacklistedAt: new Date() })
+      .where(eq(driverApplications.id, driver.id));
+  }
+
+  revalidatePath("/dispatcher/claims");
+  revalidatePath("/dispatcher");
+  revalidatePath("/dispatcher/deliveries");
 }

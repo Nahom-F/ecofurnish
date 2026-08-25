@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Mail, MapPin, Phone, X } from "lucide-react";
+import { Check, Mail, MapPin, Phone, ShieldAlert, ShieldX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,6 +113,19 @@ export function DriverApplicationsList({
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{app.fullName}</p>
                           <Badge variant="outline">{app.vehicleType}</Badge>
+                          {app.blacklistedAt ? (
+                            <span className="flex items-center gap-1 text-xs font-medium text-destructive">
+                              <ShieldX className="h-3.5 w-3.5" />
+                              Blacklisted
+                            </span>
+                          ) : (
+                            app.flagCount > 0 && (
+                              <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                                <ShieldAlert className="h-3.5 w-3.5" />
+                                {app.flagCount} flag{app.flagCount === 1 ? "" : "s"}
+                              </span>
+                            )
+                          )}
                         </div>
                         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
