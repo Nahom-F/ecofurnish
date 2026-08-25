@@ -12,6 +12,9 @@ export default async function DispatcherLayout({ children }: { children: React.R
           <Link href="/dispatcher" className="transition-colors hover:text-foreground">
             Applications
           </Link>
+          <Link href="/dispatcher/deliveries" className="transition-colors hover:text-foreground">
+            Deliveries
+          </Link>
         </nav>
       </div>
       {children}
