@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { Loader2, MapPin, Truck, User } from "lucide-react";
+import { Copy, Loader2, MapPin, Truck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,6 +23,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { formatPrice } from "@/lib/currency";
+import { driverPortalUrl } from "@/lib/delivery";
 import {
   assignDriverToOrder,
   geocodeOrderAddress,
@@ -55,6 +56,13 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   delivered: "Delivered",
 };
 
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).then(
+    () => toast.success("Link copied"),
+    () => toast.error("Couldn't copy — copy it manually instead")
+  );
+}
+
 export function DeliveryAssignmentPanel({
   orders: initialOrders,
   drivers: initialDrivers,
@@ -73,6 +81,11 @@ export function DeliveryAssignmentPanel({
   const [pin, setPin] = useState(FALLBACK_CENTER);
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Set once assignment succeeds — swaps the dialog into a "here's the
+  // driver's link" view instead of just closing, since email is
+  // optional for drivers (phone is required) and this may be the only
+  // way the dispatcher can actually hand it over.
+  const [successLink, setSuccessLink] = useState<{ driverName: string; url: string } | null>(null);
 
   async function openAssignDialog(order: AssignableOrder) {
     setAssignTarget(order);
@@ -97,7 +110,7 @@ export function DeliveryAssignmentPanel({
 
     setSubmitting(true);
     try {
-      await assignDriverToOrder({
+      const result = await assignDriverToOrder({
         orderId: order.id,
         driverId: driver.id,
         lat: pin.lat,
@@ -114,16 +127,22 @@ export function DeliveryAssignmentPanel({
           driverName: driver.fullName,
           orderStatus: "ready_for_delivery",
           assignedAt: new Date(),
+          magicToken: result.magicToken,
         },
         ...prev,
       ]);
-      setAssignTarget(null);
+      setSuccessLink({ driverName: driver.fullName, url: result.portalUrl });
       toast.success(`${driver.fullName} assigned to order #${order.id.slice(0, 8)}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't assign this driver");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function closeDialog() {
+    setAssignTarget(null);
+    setSuccessLink(null);
   }
 
   return (
@@ -201,72 +220,111 @@ export function DeliveryAssignmentPanel({
                   <User className="h-3.5 w-3.5" />
                   {d.driverName}
                 </div>
-                <Badge variant="outline">{ORDER_STATUS_LABELS[d.orderStatus] ?? d.orderStatus}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {ORDER_STATUS_LABELS[d.orderStatus] ?? d.orderStatus}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(driverPortalUrl(d.magicToken))}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy Link
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <Dialog open={!!assignTarget} onOpenChange={(open) => !open && setAssignTarget(null)}>
+      <Dialog open={!!assignTarget} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Assign a driver</DialogTitle>
-            <DialogDescription>
-              {assignTarget && (
-                <>
-                  Order #{assignTarget.id.slice(0, 8)} — {assignTarget.shippingAddress},{" "}
-                  {assignTarget.city}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <Select value={selectedDriverId} onValueChange={(v) => v && setSelectedDriverId(v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a driver" />
-              </SelectTrigger>
-              <SelectContent>
-                {drivers.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.fullName} · {d.vehicleType}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {geoLoading ? (
-              <div className="flex h-64 items-center justify-center rounded-lg border border-border/60 text-sm text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Locating address…
+          {successLink ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Driver assigned</DialogTitle>
+                <DialogDescription>
+                  {successLink.driverName} has been notified by email if they gave one — either
+                  way, here&apos;s their link in case you need to send it yourself (SMS,
+                  WhatsApp, Telegram, etc.).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex items-center gap-2 rounded-lg border border-border/60 p-3">
+                <code className="flex-1 truncate text-xs text-muted-foreground">
+                  {successLink.url}
+                </code>
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(successLink.url)}>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy
+                </Button>
               </div>
-            ) : (
-              <>
-                <DeliveryMapPicker
-                  lat={pin.lat}
-                  lng={pin.lng}
-                  onChange={(lat, lng) => setPin({ lat, lng })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Drag the pin (or click the map) to correct it — this starting point comes from
-                  an automatic address lookup, which isn&apos;t always exact.{" "}
-                  {pin.lat.toFixed(6)}, {pin.lng.toFixed(6)}
-                </p>
-              </>
-            )}
-          </div>
+              <DialogFooter>
+                <Button onClick={closeDialog}>Done</Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Assign a driver</DialogTitle>
+                <DialogDescription>
+                  {assignTarget && (
+                    <>
+                      Order #{assignTarget.id.slice(0, 8)} — {assignTarget.shippingAddress},{" "}
+                      {assignTarget.city}
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
 
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-            <Button
-              disabled={!selectedDriverId || geoLoading || submitting}
-              onClick={handleAssign}
-            >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Confirm Assignment
-            </Button>
-          </DialogFooter>
+              <div className="space-y-4">
+                <Select value={selectedDriverId} onValueChange={(v) => v && setSelectedDriverId(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a driver" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {drivers.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.fullName} · {d.vehicleType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {geoLoading ? (
+                  <div className="flex h-64 items-center justify-center rounded-lg border border-border/60 text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Locating address…
+                  </div>
+                ) : (
+                  <>
+                    <DeliveryMapPicker
+                      lat={pin.lat}
+                      lng={pin.lng}
+                      onChange={(lat, lng) => setPin({ lat, lng })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Drag the pin (or click the map) to correct it — this starting point comes
+                      from an automatic address lookup, which isn&apos;t always exact.{" "}
+                      {pin.lat.toFixed(6)}, {pin.lng.toFixed(6)}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <DialogFooter>
+                <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+                <Button
+                  disabled={!selectedDriverId || geoLoading || submitting}
+                  onClick={handleAssign}
+                >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Confirm Assignment
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

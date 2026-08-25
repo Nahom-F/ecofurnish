@@ -567,6 +567,50 @@ export async function sendDispatcherRemovedEmail(toEmail: string, name: string) 
   }
 }
 
+/** Fired to the DRIVER (not the buyer) the moment a dispatcher assigns
+ * them to an order — contains their one-time status-portal link. This
+ * is best-effort: email is optional on driverApplications (phone is the
+ * required contact), so a driver without an email on file gets nothing
+ * here — the dispatcher UI also surfaces the link directly so it can be
+ * sent by phone/SMS/WhatsApp instead. */
+export async function sendDriverAssignmentEmail(
+  toEmail: string,
+  driverName: string,
+  orderId: string,
+  portalUrl: string
+) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not set — driver assignment email was not sent.");
+    return;
+  }
+  const firstName = driverName.split(" ")[0];
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject: `New delivery — order #${orderId.slice(0, 8)}`,
+      text: `Hi ${firstName}, you've been assigned a delivery. Use this link to update your status as you go — no account or app needed: ${portalUrl}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#33472e;">New delivery assigned</h2>
+          <p style="color:#3a3f38;">
+            Hi ${firstName}, you've been assigned order #${orderId.slice(0, 8)}. Use the link
+            below to update your status as you go — no account or app needed.
+          </p>
+          <p style="margin:24px 0; text-align:center;">
+            <a href="${portalUrl}" style="display:inline-block;background:#33472e;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Open Delivery Status
+            </a>
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send driver assignment email:", err);
+  }
+}
+
 /** Fired right after someone submits the driver application form —
  * just a "we got it" receipt, not the approve/reject decision itself
  * (see sendDriverApplicationDecisionEmail below for that). */

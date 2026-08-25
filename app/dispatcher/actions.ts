@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { driverApplications, deliveryAssignments, orders } from "@/db/schema";
 import { requireDispatcher } from "@/lib/require-dispatcher";
-import { sendDriverApplicationDecisionEmail, sendDeliveryAssignedEmail } from "@/lib/email";
+import { sendDriverApplicationDecisionEmail, sendDeliveryAssignedEmail, sendDriverAssignmentEmail } from "@/lib/email";
 import { geocodeAddress } from "@/lib/geocode";
-import { generateMagicToken, generateBuyerPin } from "@/lib/delivery";
+import { generateMagicToken, generateBuyerPin, driverPortalUrl } from "@/lib/delivery";
 
 export type DriverApplication = typeof driverApplications.$inferSelect;
 export type AssignableOrder = typeof orders.$inferSelect;
@@ -19,6 +19,7 @@ export type ActiveDelivery = {
   driverName: string;
   orderStatus: string;
   assignedAt: Date;
+  magicToken: string;
 };
 
 export async function getDriverApplications() {
@@ -117,6 +118,7 @@ export async function getActiveDeliveries(): Promise<ActiveDelivery[]> {
       driverName: driverApplications.fullName,
       orderStatus: orders.status,
       assignedAt: deliveryAssignments.createdAt,
+      magicToken: deliveryAssignments.magicToken,
     })
     .from(deliveryAssignments)
     .innerJoin(orders, eq(deliveryAssignments.orderId, orders.id))
@@ -195,10 +197,19 @@ export async function assignDriverToOrder({
 
   await sendDeliveryAssignedEmail(order.customerEmail, order.customerName, orderId, buyerPin);
 
+  // The driver's own link — this is the ONLY way a driver without an
+  // email on file (email is optional; phone is the required contact)
+  // can get it, so it's returned here for the dispatcher UI to display
+  // and copy, not just emailed best-effort below.
+  const portalUrl = driverPortalUrl(magicToken);
+  if (driver.email) {
+    await sendDriverAssignmentEmail(driver.email, driver.fullName, orderId, portalUrl);
+  }
+
   revalidatePath("/dispatcher/deliveries");
   revalidatePath("/admin/orders");
   revalidatePath(`/order-confirmation/${orderId}`);
   revalidatePath("/account/orders");
 
-  return { success: true as const };
+  return { success: true as const, portalUrl, magicToken };
 }
