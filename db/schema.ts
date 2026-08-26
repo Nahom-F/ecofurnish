@@ -47,6 +47,14 @@ export const orders = pgTable("orders", {
   shippingAddress: text("shipping_address").notNull(),
   city: text("city").notNull(),
   notes: text("notes"),
+  // Best-effort browser geolocation, captured silently at checkout if
+  // the buyer's device/browser grants it — never required to place an
+  // order. When present, this is a far more accurate delivery-pin
+  // starting point than geocoding the typed address text, so
+  // geocodeOrderAddress (app/dispatcher/actions.ts) prefers these over
+  // re-geocoding whenever they're set.
+  customerLat: numeric("customer_lat", { precision: 9, scale: 6 }),
+  customerLng: numeric("customer_lng", { precision: 9, scale: 6 }),
   totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
   // Any referral reward applied at checkout (store credit, or a % code) —
   // kept separate from totalAmount (which is the final charged amount) so

@@ -26,6 +26,23 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState("");
   const [availableCredit, setAvailableCredit] = useState(0);
   const [useStoreCredit, setUseStoreCredit] = useState(false);
+  // Best-effort — never blocks checkout either way. Requested once,
+  // silently, shortly after the page loads, so it's already resolved
+  // (or already failed/denied) by the time the person finishes filling
+  // in the form. See orders.customerLat/customerLng in db/schema.ts.
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // Denied, unavailable, or timed out — checkout works exactly
+        // the same either way, so there's nothing to show the person.
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
 
   useEffect(() => {
     if (!session?.user) return;
@@ -89,6 +106,8 @@ export default function CheckoutPage() {
         shippingAddress: String(formData.get("address") || ""),
         city: String(formData.get("city") || ""),
         notes: String(formData.get("notes") || ""),
+        lat: location?.lat,
+        lng: location?.lng,
         items: items.map((i) => ({
           productId: i.productId,
           name: i.name,
@@ -158,6 +177,11 @@ export default function CheckoutPage() {
               <Input id="city" name="city" required autoComplete="address-level2" />
             </div>
           </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            If your browser allows it, we&apos;ll also use your device location to help place
+            your delivery pin more accurately — this never affects whether your order goes
+            through.
+          </p>
 
           <div className="space-y-1.5">
             <Label htmlFor="notes">Delivery notes (optional)</Label>

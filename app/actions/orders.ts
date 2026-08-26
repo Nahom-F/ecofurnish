@@ -17,6 +17,10 @@ interface PlaceOrderInput {
   shippingAddress: string;
   city: string;
   notes?: string;
+  // Best-effort browser geolocation from checkout — see
+  // orders.customerLat/customerLng in db/schema.ts. Never required.
+  lat?: number;
+  lng?: number;
   // price is intentionally NOT trusted from here — see the re-pricing
   // block below. It's only accepted in the input type because the cart
   // (a client-side context) naturally carries one; it's never read.
@@ -91,6 +95,17 @@ export async function createOrder(input: PlaceOrderInput) {
   }
   const totalAmount = Math.max(0, subtotal - parseFloat(discountAmount)).toFixed(2);
 
+  // Silently dropped if missing, malformed, or out of range — this is a
+  // convenience for the dispatcher's starting pin later, never
+  // something worth failing an order over.
+  const hasValidLocation =
+    typeof input.lat === "number" &&
+    typeof input.lng === "number" &&
+    Number.isFinite(input.lat) &&
+    Number.isFinite(input.lng) &&
+    Math.abs(input.lat) <= 90 &&
+    Math.abs(input.lng) <= 180;
+
   const [order] = await db
     .insert(orders)
     .values({
@@ -101,6 +116,8 @@ export async function createOrder(input: PlaceOrderInput) {
       shippingAddress: input.shippingAddress,
       city: input.city,
       notes: input.notes,
+      customerLat: hasValidLocation ? input.lat!.toFixed(6) : null,
+      customerLng: hasValidLocation ? input.lng!.toFixed(6) : null,
       totalAmount,
       discountAmount,
       discountNote,

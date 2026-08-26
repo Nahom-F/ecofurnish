@@ -146,13 +146,27 @@ export async function getActiveDeliveries(): Promise<ActiveDelivery[]> {
 
 // Gives the assignment dialog a starting pin — the dispatcher drags it
 // into place afterward (see the delivery-location design decision).
-// Returns null on a geocoding miss; the dialog falls back to an
-// Addis Ababa center point for the dispatcher to place manually.
+// Gives the assignment dialog a starting pin — the dispatcher drags it
+// into place afterward (see the delivery-location design decision).
+// Prefers the buyer's own checkout-time geolocation (orders.customerLat/
+// customerLng) when they granted it — that's a real GPS fix, so it beats
+// text-geocoding the address every time. Falls back to geocoding the
+// address, and finally to null (Addis Ababa center) if that misses too.
 export async function geocodeOrderAddress(orderId: string) {
   await requireDispatcher();
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) throw new Error("Order not found.");
-  return geocodeAddress(order.shippingAddress, order.city);
+
+  if (order.customerLat && order.customerLng) {
+    return {
+      lat: parseFloat(order.customerLat),
+      lng: parseFloat(order.customerLng),
+      source: "gps" as const,
+    };
+  }
+
+  const geocoded = await geocodeAddress(order.shippingAddress, order.city);
+  return geocoded ? { ...geocoded, source: "geocoded" as const } : null;
 }
 
 export async function assignDriverToOrder({

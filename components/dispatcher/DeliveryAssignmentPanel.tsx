@@ -79,6 +79,7 @@ export function DeliveryAssignmentPanel({
   const [assignTarget, setAssignTarget] = useState<AssignableOrder | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [pin, setPin] = useState(FALLBACK_CENTER);
+  const [pinSource, setPinSource] = useState<"gps" | "geocoded" | "fallback">("fallback");
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   // Set once assignment succeeds — swaps the dialog into a "here's the
@@ -91,12 +92,20 @@ export function DeliveryAssignmentPanel({
     setAssignTarget(order);
     setSelectedDriverId("");
     setPin(FALLBACK_CENTER);
+    setPinSource("fallback");
     setGeoLoading(true);
     try {
       const result = await geocodeOrderAddress(order.id);
-      setPin(result ?? FALLBACK_CENTER);
+      if (result) {
+        setPin({ lat: result.lat, lng: result.lng });
+        setPinSource(result.source);
+      } else {
+        setPin(FALLBACK_CENTER);
+        setPinSource("fallback");
+      }
     } catch {
       setPin(FALLBACK_CENTER);
+      setPinSource("fallback");
     } finally {
       setGeoLoading(false);
     }
@@ -246,18 +255,21 @@ export function DeliveryAssignmentPanel({
               <DialogHeader>
                 <DialogTitle>Driver assigned</DialogTitle>
                 <DialogDescription>
-                  {successLink.driverName} has been notified by email if they gave one — either
-                  way, here&apos;s their link in case you need to send it yourself (SMS,
-                  WhatsApp, Telegram, etc.).
+                  {`${successLink.driverName} was notified by email if they gave one. Here's their link either way, in case you need to send it yourself.`}
                 </DialogDescription>
               </DialogHeader>
-              <div className="flex items-center gap-2 rounded-lg border border-border/60 p-3">
-                <code className="flex-1 truncate text-xs text-muted-foreground">
+              <div className="space-y-2 rounded-lg border border-border/60 p-3">
+                <code className="block break-all text-xs text-muted-foreground">
                   {successLink.url}
                 </code>
-                <Button size="sm" variant="outline" onClick={() => copyToClipboard(successLink.url)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => copyToClipboard(successLink.url)}
+                >
                   <Copy className="h-3.5 w-3.5" />
-                  Copy
+                  Copy Link
                 </Button>
               </div>
               <DialogFooter>
@@ -305,8 +317,13 @@ export function DeliveryAssignmentPanel({
                       onChange={(lat, lng) => setPin({ lat, lng })}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Drag the pin (or click the map) to correct it — this starting point comes
-                      from an automatic address lookup, which isn&apos;t always exact.{" "}
+                      {`Drag the pin (or click the map) to correct it — this starting point ${
+                        pinSource === "gps"
+                          ? "came from the buyer's own device location"
+                          : pinSource === "geocoded"
+                            ? "comes from an automatic address lookup, which isn't always exact"
+                            : "is just a rough city center — the address lookup didn't find a match"
+                      }. `}
                       {pin.lat.toFixed(6)}, {pin.lng.toFixed(6)}
                     </p>
                   </>
