@@ -166,8 +166,7 @@ export function DispatcherManager({
           <DialogHeader>
             <DialogTitle>Remove dispatcher access?</DialogTitle>
             <DialogDescription>
-              {removeTarget?.name} will lose access to the dispatcher tools immediately. Their
-              account otherwise stays as-is, and they can be re-added later.
+              {`${removeTarget?.name} will lose access to the dispatcher tools immediately. Their account otherwise stays as-is, and they can be re-added later.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

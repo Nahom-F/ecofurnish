@@ -4,6 +4,14 @@ import { deliveryClaims } from "@/db/schema";
 import { getAssignmentContext, isTokenExpired, NEXT_CLAIM_TYPE } from "@/lib/driver-portal";
 import { OrderTimeline } from "@/components/order/OrderTimeline";
 import { DriverActionPanel } from "@/components/driver/DriverActionPanel";
+import { AutoRefresh } from "@/components/AutoRefresh";
+
+// This page has no dynamic API calls of its own (no auth — it's gated
+// only by the token), so unlike the admin/dispatcher layouts it isn't
+// automatically opted out of caching by Next.js's own detection. Force
+// it explicitly — otherwise a driver could sit on a cached snapshot
+// indefinitely after a dispatcher approves/declines their claim.
+export const dynamic = "force-dynamic";
 
 export default async function DriverPortalPage({
   params,
@@ -37,6 +45,7 @@ export default async function DriverPortalPage({
 
   return (
     <div className="container mx-auto max-w-lg px-4 py-10">
+      <AutoRefresh />
       <h1 className="text-2xl font-bold">Your Delivery</h1>
       <p className="mt-1 text-muted-foreground">
         {order.shippingAddress}, {order.city}
