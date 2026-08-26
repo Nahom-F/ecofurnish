@@ -31,5 +31,9 @@ export const FOOTER_LINKS = {
       title: "Privacy Policy",
       href: "/privacy",
     },
+    {
+      title: "Not Seeing Our Emails?",
+      href: "/help/check-spam",
+    },
   ],
 };

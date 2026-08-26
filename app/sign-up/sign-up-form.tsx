@@ -118,6 +118,13 @@ export function SignUpForm({ socialProviders }: { socialProviders: SocialProvide
                 We sent a verification link to your inbox. Click it to activate your account,
                 then come back and sign in.
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Don&apos;t see it? Check your spam or junk folder — and if it&apos;s there, mark it
+                &quot;Not spam&quot; so it (and future emails) land in your inbox.{" "}
+                <Link href="/help/check-spam" className="font-medium text-foreground hover:underline">
+                  More help
+                </Link>
+              </p>
               <Button className="mt-6 w-full lg:h-11" render={<Link href="/sign-in" />} nativeButton={false}>
                 Go to sign in
               </Button>
