@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { orders, orderItems, products } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { getFreshRates } from "@/lib/fx-rates";
 import { confirmPayment } from "@/app/actions/orders";
 import { ClearCartOnSuccess } from "@/components/clear-cart-on-success";
 import { ReorderButton, type ReorderItem } from "@/components/order/ReorderButton";
@@ -61,6 +62,10 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pr
 
   const session = await auth.api.getSession({ headers: await headers() });
   const preferredCurrency = (session?.user?.preferredCurrency as Currency | undefined) || "ETB";
+  // Own module instance from the browser's, same reasoning as the order
+  // history page — fetch (or reuse the still-warm cache of) this
+  // server's own copy rather than assuming one exists yet.
+  const { rates } = await getFreshRates();
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-16">
@@ -122,7 +127,7 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pr
             <span className="text-primary">{formatPrice(order.totalAmount, "ETB")}</span>
             {preferredCurrency !== "ETB" && (
               <p className="text-xs font-normal text-muted-foreground">
-                ≈ {formatPrice(order.totalAmount, preferredCurrency)}
+                ≈ {formatPrice(order.totalAmount, preferredCurrency, rates)}
               </p>
             )}
           </div>

@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { formatPrice, type Currency } from "@/lib/currency";
+import { getFreshRates } from "@/lib/fx-rates";
 import { Badge } from "@/components/ui/badge";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,6 +31,11 @@ export default async function OrderHistoryPage() {
     .orderBy(desc(orders.createdAt));
 
   const preferredCurrency = (session.user.preferredCurrency as Currency | undefined) || "ETB";
+  // Awaited explicitly (rather than relying on the shared EXCHANGE_RATES
+  // object already being warm) since this is a Server Component — it
+  // has its own module instance, separate from the browser's, so it
+  // needs its own fresh copy rather than assuming one exists yet.
+  const { rates } = await getFreshRates();
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10">
@@ -73,7 +79,7 @@ export default async function OrderHistoryPage() {
                 <Badge variant="outline">{STATUS_LABELS[order.status] ?? order.status}</Badge>
               </div>
               <span className="font-semibold text-primary">
-                {formatPrice(order.totalAmount, preferredCurrency)}
+                {formatPrice(order.totalAmount, preferredCurrency, rates)}
               </span>
             </Link>
           ))}

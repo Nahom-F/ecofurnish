@@ -40,6 +40,7 @@ import {
 import ProductCard from "@/components/product/ProductCard";
 import { CURRENCIES, type Currency } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
+import { ExchangeRateNote } from "@/components/currency/ExchangeRateNote";
 
 interface Product {
   id: string;
@@ -176,6 +177,10 @@ export function CatalogView({ products }: { products: Product[] }) {
           </SelectContent>
         </Select>
       </div>
+
+      {currency !== "ETB" && (
+        <ExchangeRateNote className="-mt-5 mb-6 text-right text-xs text-muted-foreground" />
+      )}
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed bg-muted/20 py-24 text-center">

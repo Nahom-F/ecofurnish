@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/auth-client";
+import { ExchangeRateNote } from "@/components/currency/ExchangeRateNote";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal } = useCart();
@@ -117,9 +118,12 @@ export default function CartPage() {
           <span className="text-2xl font-bold text-primary">{formatPrice(subtotal, currency)}</span>
         </div>
         {currency !== "ETB" && (
-          <p className="text-xs text-muted-foreground">
-            Shown in {currency} for reference — you&apos;ll be charged in ETB at checkout.
-          </p>
+          <>
+            <p className="text-xs text-muted-foreground">
+              Shown in {currency} for reference — you&apos;ll be charged in ETB at checkout.
+            </p>
+            <ExchangeRateNote className="text-xs text-muted-foreground" />
+          </>
         )}
         <Button size="lg" className="mt-3" render={<Link href="/checkout" />} nativeButton={false}>
           Proceed to Checkout
