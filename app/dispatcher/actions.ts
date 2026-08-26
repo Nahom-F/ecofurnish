@@ -288,16 +288,11 @@ export async function approveClaim(claimId: string, dispatcherNote: string) {
   // This IS the case applyOrderStatus (lib/orders.ts) was reserved for
   // — approving a claim is exactly when the generic per-stage email
   // should fire, unlike assignment (which has its own richer email).
+  // It also now handles completing the assignment itself when the new
+  // status is "delivered", so there's nothing extra to do here.
   const newStatus = CLAIM_TO_ORDER_STATUS[claim.claimType];
   if (newStatus) {
     await applyOrderStatus(assignment.orderId, newStatus);
-  }
-
-  if (claim.claimType === "delivered") {
-    await db
-      .update(deliveryAssignments)
-      .set({ status: "completed" })
-      .where(eq(deliveryAssignments.id, assignment.id));
   }
 
   revalidatePath("/dispatcher/claims");
