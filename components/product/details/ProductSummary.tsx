@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart-context";
 import { useCurrency } from "@/lib/currency-context";
 import { formatPrice } from "@/lib/currency";
 import { getEffectivePrice } from "@/lib/pricing";
+import { useEffectiveStock } from "@/lib/use-effective-stock";
 import ProductMeta from "./ProductMeta";
 import QuantitySelector from "./QuantitySelector";
 import AddToCartButton from "../AddToCartButton";
@@ -22,7 +23,8 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
   const { addItem } = useCart();
   const { currency } = useCurrency();
   const [quantity, setQuantity] = useState(1);
-  const outOfStock = product.stock <= 0;
+  const effectiveStock = useEffectiveStock(product.id, product.stock);
+  const outOfStock = effectiveStock <= 0;
 
   function handleAddToCart() {
     addItem(
@@ -31,7 +33,7 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
         name: product.name,
         price: getEffectivePrice(product),
         imageUrl: product.imageUrl,
-        stock: product.stock,
+        stock: effectiveStock,
       },
       quantity
     );
@@ -86,8 +88,8 @@ export default function ProductSummary({ product }: ProductSummaryProps) {
           <QuantitySelector
             quantity={quantity}
             onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
-            onIncrease={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-            max={product.stock}
+            onIncrease={() => setQuantity((q) => Math.min(effectiveStock, q + 1))}
+            max={effectiveStock}
           />
           {/* Same pattern as the cart page's running-total badge: keyed on
               quantity so React remounts it on every +/- click, replaying

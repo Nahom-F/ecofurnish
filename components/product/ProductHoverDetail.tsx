@@ -10,6 +10,7 @@ import { useCart } from "@/lib/cart-context";
 import { useWishlist } from "@/lib/wishlist-context";
 import { formatPrice, type Currency } from "@/lib/currency";
 import { getEffectivePrice, hasActiveDiscount } from "@/lib/pricing";
+import { useEffectiveStock } from "@/lib/use-effective-stock";
 import { Product } from "@/types/product";
 import { NAV_HOVER_ICON } from "@/components/layout/navbar/nav-hover";
 
@@ -24,6 +25,7 @@ export default function ProductHoverDetail({
   const { addItem } = useCart();
   const { isWishlisted, toggleItem } = useWishlist();
   const liked = isWishlisted(product.id);
+  const effectiveStock = useEffectiveStock(product.id, product.stock);
 
   // Cover photo first, then extras — lets shoppers flip through a
   // product's other pictures right from the catalog, without opening it.
@@ -60,7 +62,7 @@ export default function ProductHoverDetail({
       name: product.name,
       price: getEffectivePrice(product),
       imageUrl: product.imageUrl,
-      stock: product.stock,
+      stock: effectiveStock,
     });
     toast.success(`${product.name} added to cart`);
   }
@@ -186,12 +188,12 @@ export default function ProductHoverDetail({
             ))}
             <span
               className={
-                product.stock > 0
+                effectiveStock > 0
                   ? "text-xs text-muted-foreground"
                   : "text-xs font-medium text-destructive"
               }
             >
-              {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+              {effectiveStock > 0 ? `${effectiveStock} in stock` : "Out of stock"}
             </span>
           </div>
         </div>
@@ -201,12 +203,12 @@ export default function ProductHoverDetail({
         <button
           type="button"
           tabIndex={-1}
-          disabled={product.stock <= 0}
+          disabled={effectiveStock <= 0}
           onClick={handleAddToCart}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 sm:text-sm"
         >
           <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
+          {effectiveStock > 0 ? "Add to Cart" : "Out of Stock"}
         </button>
         <button
           type="button"
