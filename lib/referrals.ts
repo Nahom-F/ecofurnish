@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { orders, referralCodes, referralRewards, referrals } from "@/db/schema";
+import { orders, referralCodes, referralRewards, referralRewardUsages, referrals } from "@/db/schema";
 import { REFERRAL_COOKIE } from "@/lib/referral-cookie";
 
 // Unambiguous charset — no 0/O or 1/I, so a code read aloud or handwritten
@@ -242,12 +242,17 @@ export interface RewardApplication {
 /**
  * Applies a promo code and/or the user's available store credit to an
  * order total, and marks whatever was used as redeemed/decremented.
- * Called from createOrder() right before the order is inserted.
+ * Called from createOrder() right after the order row is inserted (so
+ * `orderId` already exists) — every reward this touches gets a matching
+ * referralRewardUsages row recording exactly how much of it this order
+ * took, which is what makes reverseOrderRewardUsages possible later if
+ * the order never ends up paid.
  */
 export async function applyReferralRewards(
   userId: string,
   subtotal: number,
-  options: { promoCode?: string; useStoreCredit?: boolean }
+  options: { promoCode?: string; useStoreCredit?: boolean },
+  orderId: string
 ): Promise<RewardApplication> {
   let remaining = subtotal;
   const notes: string[] = [];
@@ -281,6 +286,11 @@ export async function applyReferralRewards(
           .update(referralRewards)
           .set({ redeemed: true, redeemedAt: new Date() })
           .where(eq(referralRewards.id, reward.id));
+        await db.insert(referralRewardUsages).values({
+          orderId,
+          rewardId: reward.id,
+          amountUsed: off.toFixed(2),
+        });
       }
     }
   }
@@ -316,6 +326,11 @@ export async function applyReferralRewards(
           .set({ creditAmount: leftover.toFixed(2) })
           .where(eq(referralRewards.id, r.id));
       }
+      await db.insert(referralRewardUsages).values({
+        orderId,
+        rewardId: r.id,
+        amountUsed: use.toFixed(2),
+      });
     }
     if (creditUsed > 0) notes.push(`Store credit applied: ${creditUsed.toFixed(2)} ETB`);
   }
@@ -324,4 +339,53 @@ export async function applyReferralRewards(
     discountAmount: (subtotal - remaining).toFixed(2),
     note: notes.length ? notes.join(" · ") : null,
   };
+}
+
+/**
+ * Hands back whatever referral rewards an order consumed — called when an
+ * order is cancelled (see applyOrderStatus in lib/orders.ts), whether that
+ * was an admin's manual override or the expire-orders cron catching an
+ * abandoned/failed checkout that never got paid. Restores each touched
+ * reward by the exact amountUsed recorded at redemption time, which stays
+ * correct even if other orders have since taken further slices of the same
+ * store-credit row. Safe to call more than once for the same order — usage
+ * rows already reversed are skipped.
+ */
+export async function reverseOrderRewardUsages(orderId: string) {
+  const usages = await db
+    .select()
+    .from(referralRewardUsages)
+    .where(and(eq(referralRewardUsages.orderId, orderId), sql`${referralRewardUsages.reversedAt} is null`));
+
+  for (const usage of usages) {
+    const [reward] = await db
+      .select()
+      .from(referralRewards)
+      .where(eq(referralRewards.id, usage.rewardId))
+      .limit(1);
+    if (!reward) continue; // shouldn't happen, but nothing to restore if it does
+
+    if (reward.type === "discount_code") {
+      // All-or-nothing — just un-flip it so the same code works again.
+      await db
+        .update(referralRewards)
+        .set({ redeemed: false, redeemedAt: null })
+        .where(eq(referralRewards.id, reward.id));
+    } else {
+      // store_credit / free_shipping — add this order's slice back onto
+      // whatever balance is there now (not onto a value assumed from
+      // redemption time), so a partial spend by some other order in the
+      // meantime is left untouched.
+      const restored = parseFloat(reward.creditAmount ?? "0") + parseFloat(usage.amountUsed);
+      await db
+        .update(referralRewards)
+        .set({ redeemed: false, redeemedAt: null, creditAmount: restored.toFixed(2) })
+        .where(eq(referralRewards.id, reward.id));
+    }
+
+    await db
+      .update(referralRewardUsages)
+      .set({ reversedAt: new Date() })
+      .where(eq(referralRewardUsages.id, usage.id));
+  }
 }

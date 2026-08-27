@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { orders, deliveryAssignments } from "@/db/schema";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
 import { ORDER_STATUSES } from "@/lib/order-statuses";
+import { reverseOrderRewardUsages } from "@/lib/referrals";
 
 export { ORDER_STATUSES, type OrderStatus } from "@/lib/order-statuses";
 
@@ -38,6 +39,16 @@ export async function applyOrderStatus(orderId: string, status: string) {
       .where(
         and(eq(deliveryAssignments.orderId, orderId), eq(deliveryAssignments.status, "active"))
       );
+  }
+
+  // A cancelled order shouldn't leave a referral reward permanently
+  // spent for nothing — whether it's an admin cancelling a paid order
+  // after the fact, or the expire-orders cron catching an abandoned
+  // checkout that never paid at all (see app/api/cron/expire-orders).
+  // No-op if this order never touched any reward, and safe to call
+  // twice (reverseOrderRewardUsages skips usages already reversed).
+  if (status === "cancelled") {
+    await reverseOrderRewardUsages(orderId);
   }
 
   // Only notify on an actual change — re-applying the same status

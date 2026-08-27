@@ -173,6 +173,26 @@ export const referralRewards = pgTable(
   ]
 );
 
+// One row per reward-consumption an order actually drew on — created
+// alongside the redemption in applyReferralRewards (lib/referrals.ts).
+// This is what lets an abandoned or cancelled order's discount be handed
+// back precisely (see reverseOrderRewardUsages), rather than either
+// leaving it burned forever or reopening the double-spend a customer
+// could get by checking out twice with the same code/credit before
+// either order pays.
+export const referralRewardUsages = pgTable("referral_reward_usages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  orderId: text("order_id").notNull().references(() => orders.id),
+  rewardId: text("reward_id").notNull().references(() => referralRewards.id),
+  amountUsed: numeric("amount_used", { precision: 10, scale: 2 }).notNull(),
+  // Set once this usage has been reversed (order abandoned/cancelled
+  // before paying). Kept as a row rather than deleted — doubles as an
+  // audit trail and makes reversal idempotent if applyOrderStatus is
+  // ever called "cancelled" twice for the same order.
+  reversedAt: timestamp("reversed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // One row per person who submits the driver application form. There is
 // no persistent driver account/login — an approved row here doubles as
 // the driver's identity for delivery assignment and flag tracking. A

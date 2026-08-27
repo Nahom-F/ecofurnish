@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { orders, orderItems, products } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { initializeChapaTransaction, verifyChapaTransaction } from "@/lib/chapa";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendLowStockAlertEmail } from "@/lib/email";
 import { applyReferralRewards, qualifyReferralIfFirstPurchase } from "@/lib/referrals";
 import { getEffectivePrice } from "@/lib/pricing";
 
@@ -83,18 +83,6 @@ export async function createOrder(input: PlaceOrderInput) {
     });
   }
 
-  let discountAmount = "0.00";
-  let discountNote: string | null = null;
-  if (input.promoCode || input.useStoreCredit) {
-    const result = await applyReferralRewards(userId, subtotal, {
-      promoCode: input.promoCode,
-      useStoreCredit: input.useStoreCredit,
-    });
-    discountAmount = result.discountAmount;
-    discountNote = result.note;
-  }
-  const totalAmount = Math.max(0, subtotal - parseFloat(discountAmount)).toFixed(2);
-
   // Silently dropped if missing, malformed, or out of range — this is a
   // convenience for the dispatcher's starting pin later, never
   // something worth failing an order over.
@@ -106,6 +94,12 @@ export async function createOrder(input: PlaceOrderInput) {
     Math.abs(input.lat) <= 90 &&
     Math.abs(input.lng) <= 180;
 
+  // Inserted with a provisional totalAmount (no discount applied yet) and
+  // updated below once applyReferralRewards runs — that function attaches
+  // a referralRewardUsages row to whatever it redeems, which needs a real
+  // orderId to point at (see reverseOrderRewardUsages in lib/referrals.ts,
+  // which is how an abandoned/cancelled order's reward gets handed back
+  // instead of staying burned forever).
   const [order] = await db
     .insert(orders)
     .values({
@@ -118,11 +112,28 @@ export async function createOrder(input: PlaceOrderInput) {
       notes: input.notes,
       customerLat: hasValidLocation ? input.lat!.toFixed(6) : null,
       customerLng: hasValidLocation ? input.lng!.toFixed(6) : null,
-      totalAmount,
-      discountAmount,
-      discountNote,
+      totalAmount: subtotal.toFixed(2),
     })
     .returning();
+
+  let discountAmount = "0.00";
+  let discountNote: string | null = null;
+  if (input.promoCode || input.useStoreCredit) {
+    const result = await applyReferralRewards(
+      userId,
+      subtotal,
+      { promoCode: input.promoCode, useStoreCredit: input.useStoreCredit },
+      order.id
+    );
+    discountAmount = result.discountAmount;
+    discountNote = result.note;
+  }
+  const totalAmount = Math.max(0, subtotal - parseFloat(discountAmount)).toFixed(2);
+
+  await db
+    .update(orders)
+    .set({ totalAmount, discountAmount, discountNote })
+    .where(eq(orders.id, order.id));
 
   await db.insert(orderItems).values(
     pricedItems.map((item) => ({ ...item, orderId: order.id }))
@@ -171,18 +182,8 @@ export async function createCheckoutSession(orderId: string) {
  * Called from the order-confirmation page (and from the Chapa callback
  * route) to confirm — server-to-server, not just via the browser redirect —
  * that a transaction actually succeeded, before doing anything irreversible
- * (marking it paid, sending the confirmation email). Safe to call more
+ * (decrementing stock, sending the confirmation email). Safe to call more
  * than once: it's a no-op if the order is already marked paid.
- *
- * Deliberately does NOT touch products.stock. It used to decrement stock
- * here on every real purchase, but that meant one person's test checkout
- * would make a product look depleted for every other visitor too — bad
- * for a demo/portfolio site where lots of people might click through a
- * purchase. Stock is now purely admin-set (via the product form) and
- * identical for everyone by default; each browser's own "how many have
- * I bought" tally is tracked client-side instead (see
- * lib/simulated-stock.ts and RecordSimulatedPurchase), and layered on
- * top of the real number ONLY in that one browser's own view.
  */
 export async function confirmPayment(orderId: string, txRef: string) {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
@@ -200,6 +201,25 @@ export async function confirmPayment(orderId: string, txRef: string) {
   if (!paid) return { paid: false as const };
 
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+
+  const LOW_STOCK_THRESHOLD = 5;
+  for (const item of items) {
+    const [product] = await db
+      .select({ stock: products.stock, name: products.name })
+      .from(products)
+      .where(eq(products.id, item.productId))
+      .limit(1);
+    if (product) {
+      const newStock = Math.max(0, product.stock - item.quantity);
+      await db.update(products).set({ stock: newStock }).where(eq(products.id, item.productId));
+      // Only fires on the crossing, not on every purchase once it's
+      // already low — e.g. 6→4 alerts, but 4→2 (already below threshold
+      // before this purchase) doesn't re-send the same warning.
+      if (newStock <= LOW_STOCK_THRESHOLD && product.stock > LOW_STOCK_THRESHOLD) {
+        await sendLowStockAlertEmail(product.name, newStock);
+      }
+    }
+  }
 
   await db
     .update(orders)
