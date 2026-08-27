@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { sendTelegramMessage, isAuthorizedChat } from "@/lib/telegram";
 import { handleCommand } from "@/lib/telegram-commands";
 
 // Telegram's payload shape for the one field we actually read — see
@@ -34,10 +34,17 @@ export async function POST(request: NextRequest) {
   const message = update.message;
   if (!message?.text) return NextResponse.json({ ok: true });
 
-  // Only ever reply to the store owner's own chat — this bot exposes real
-  // business numbers, so a stranger who finds its username shouldn't be
-  // able to just ask it anything.
-  if (String(message.chat.id) !== process.env.TELEGRAM_CHAT_ID) {
+  // Only ever reply to the store owner's own chat(s) — this bot exposes
+  // real business numbers, so a stranger who finds its username
+  // shouldn't be able to just ask it anything. Still replies once,
+  // rather than going silent, so a legitimate person trying to get
+  // access has something to forward to the admin.
+  const chatId = String(message.chat.id);
+  if (!isAuthorizedChat(chatId)) {
+    await sendTelegramMessage(
+      `This bot is only available for the EcoFurnish admin.\n\nIf you should have access, share this with them:\n<code>${chatId}</code>`,
+      chatId
+    );
     return NextResponse.json({ ok: true });
   }
 

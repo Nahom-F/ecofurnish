@@ -18,7 +18,14 @@ export async function buildStockReply(): Promise<string> {
     return `${dot} ${p.name} — ${p.stock} left`;
   });
 
-  return [`<b>📦 Stock levels</b>`, ...lines].join("\n");
+  const legend = [
+    `\n<b>Legend</b>`,
+    `🔴 Under 5 — restock soon or you'll run out`,
+    `🟡 Under 15 — you're okay, but worth restocking soon`,
+    `🟢 15 or more — plenty in stock`,
+  ];
+
+  return [`<b>📦 Stock levels</b>`, ...lines, ...legend].join("\n");
 }
 
 /** "/digest" — the exact same content the 7am cron sends, on demand. */
