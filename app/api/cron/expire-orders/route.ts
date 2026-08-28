@@ -6,7 +6,13 @@ import { applyOrderStatus } from "@/lib/orders";
 
 // How long an order gets to actually pay before we give up on it. Chapa
 // checkout normally completes in minutes; this is a generous buffer for
-// someone stepping away mid-payment, not a tight timeout.
+// someone stepping away mid-payment, not a tight timeout. Note the cron
+// itself only runs once a day (see vercel.json) — Vercel's Hobby plan
+// caps cron frequency at daily, so in the worst case an abandoned order
+// sits unpaid for up to ~24h before this actually catches it, not just
+// this window. Fine for what this does (reclaiming a referral reward
+// from a checkout nobody ever finished) — nothing here is time-critical
+// enough to need Vercel Pro's more-frequent cron scheduling.
 const EXPIRY_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Same auth pattern as app/api/cron/daily-digest — Vercel calls this with
