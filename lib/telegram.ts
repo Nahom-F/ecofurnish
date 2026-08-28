@@ -1,6 +1,10 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { telegramAdmins } from "@/db/schema";
+
 // Sends messages to your personal Telegram chat via the Bot API.
 //
-// Setup:
+// Initial setup (one-time, gets you the first/failsafe admin):
 // 1. Message @BotFather on Telegram, run /newbot, copy the token it gives
 //    you into TELEGRAM_BOT_TOKEN.
 // 2. Message your new bot anything (e.g. "hi") so it's allowed to message
@@ -8,13 +12,18 @@
 // 3. Get your chat ID: visit
 //    https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates in a browser
 //    right after step 2, and read the numeric "id" under "chat" in the
-//    JSON response. Put that in TELEGRAM_CHAT_ID.
-// 4. To allow more than one person, put a comma-separated list in
-//    TELEGRAM_CHAT_ID (e.g. "111111,222222") — no code change needed.
-//    An easier way to get a new person's ID than repeating step 3:
-//    have them just message the bot once. It replies to anyone not yet
-//    on the list with their own chat ID, ready to copy into the env var.
-export async function sendTelegramMessage(text: string, chatId?: string) {
+//    JSON response. Put that in TELEGRAM_CHAT_ID (comma-separated if
+//    you want more than one permanent, undeletable admin this way).
+//
+// Adding MORE admins after that never needs Vercel again: anyone who
+// isn't authorized gets a "Request Access" button when they message the
+// bot, types a reason, and the request lands on /admin/telegram for you
+// to approve or reject — see lib/telegram-access-requests.ts.
+export async function sendTelegramMessage(
+  text: string,
+  chatId?: string,
+  options?: { inlineKeyboard?: { text: string; callback_data: string }[][] }
+) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const targetChatId = chatId ?? process.env.TELEGRAM_CHAT_ID?.split(",")[0]?.trim();
 
@@ -31,6 +40,9 @@ export async function sendTelegramMessage(text: string, chatId?: string) {
         chat_id: targetChatId,
         text,
         parse_mode: "HTML",
+        ...(options?.inlineKeyboard
+          ? { reply_markup: { inline_keyboard: options.inlineKeyboard } }
+          : {}),
       }),
     });
 
@@ -46,13 +58,39 @@ export async function sendTelegramMessage(text: string, chatId?: string) {
   }
 }
 
-/** True if this chat ID is one of the allowed admin chats.
- * TELEGRAM_CHAT_ID supports a comma-separated list, so more than one
- * person can use the bot with no code change — just editing the env var. */
-export function isAuthorizedChat(chatId: string): boolean {
-  const allowed = (process.env.TELEGRAM_CHAT_ID ?? "")
+/** Dismisses the loading spinner on a tapped inline button. Telegram
+ * expects this call within a few seconds of any callback_query,
+ * whether or not the tap actually led anywhere. */
+export async function answerCallbackQuery(callbackQueryId: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callback_query_id: callbackQueryId }),
+    });
+  } catch (err) {
+    console.error("Failed to answer Telegram callback query:", err);
+  }
+}
+
+/** True if this chat ID is allowed to use the bot's commands — either
+ * it's in the TELEGRAM_CHAT_ID env var (the original failsafe admin(s),
+ * never removable from anywhere in the app) or it's an "approved" row
+ * in telegram_admins (added via /admin/telegram, no Vercel/deploy step
+ * needed). Async because of that second check. */
+export async function isAuthorizedChat(chatId: string): Promise<boolean> {
+  const envAllowed = (process.env.TELEGRAM_CHAT_ID ?? "")
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
-  return allowed.includes(chatId);
+  if (envAllowed.includes(chatId)) return true;
+
+  const [row] = await db
+    .select({ status: telegramAdmins.status })
+    .from(telegramAdmins)
+    .where(eq(telegramAdmins.chatId, chatId))
+    .limit(1);
+  return row?.status === "approved";
 }

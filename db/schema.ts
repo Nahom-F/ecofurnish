@@ -173,26 +173,6 @@ export const referralRewards = pgTable(
   ]
 );
 
-// One row per reward-consumption an order actually drew on — created
-// alongside the redemption in applyReferralRewards (lib/referrals.ts).
-// This is what lets an abandoned or cancelled order's discount be handed
-// back precisely (see reverseOrderRewardUsages), rather than either
-// leaving it burned forever or reopening the double-spend a customer
-// could get by checking out twice with the same code/credit before
-// either order pays.
-export const referralRewardUsages = pgTable("referral_reward_usages", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  orderId: text("order_id").notNull().references(() => orders.id),
-  rewardId: text("reward_id").notNull().references(() => referralRewards.id),
-  amountUsed: numeric("amount_used", { precision: 10, scale: 2 }).notNull(),
-  // Set once this usage has been reversed (order abandoned/cancelled
-  // before paying). Kept as a row rather than deleted — doubles as an
-  // audit trail and makes reversal idempotent if applyOrderStatus is
-  // ever called "cancelled" twice for the same order.
-  reversedAt: timestamp("reversed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // One row per person who submits the driver application form. There is
 // no persistent driver account/login — an approved row here doubles as
 // the driver's identity for delivery assignment and flag tracking. A
@@ -270,6 +250,26 @@ export const deliveryClaims = pgTable("delivery_claims", {
   status: text("status").notNull().default("pending"), // pending | approved | declined
   dispatcherNote: text("dispatcher_note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+});
+
+// One row per person who's ever requested (or been granted) Telegram
+// bot access via the self-service flow — see app/api/telegram/webhook
+// and lib/telegram-access-requests.ts. The original TELEGRAM_CHAT_ID
+// env var (lib/telegram.ts) remains a permanent fallback admin that
+// can never be locked out by anything happening here; this table is
+// purely for ADDITIONAL admins, added without ever touching Vercel.
+export const telegramAdmins = pgTable("telegram_admins", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  chatId: text("chat_id").notNull().unique(),
+  label: text("label"), // optional display name, e.g. "Abebe — dispatcher"
+  reason: text("reason"), // what they typed when self-requesting access
+  // awaiting_reason (tapped "Request Access", hasn't typed a reason
+  // yet) -> pending (reason given, awaiting admin review) -> approved
+  // | rejected. A manually-added admin (via the /admin/telegram "Add"
+  // form) skips straight to "approved" with no reason.
+  status: text("status").notNull().default("awaiting_reason"),
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
   reviewedAt: timestamp("reviewed_at"),
 });
 

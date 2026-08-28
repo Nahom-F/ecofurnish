@@ -38,6 +38,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/dispatchers" className="transition-colors hover:text-foreground">
             Dispatchers
           </Link>
+          <Link href="/admin/telegram" className="transition-colors hover:text-foreground">
+            Telegram Access
+          </Link>
           <Link
             href="/dispatcher"
             className="flex items-center gap-1 transition-colors hover:text-foreground"
