@@ -67,7 +67,12 @@ export async function POST(request: NextRequest) {
   }
 
   const reply = await handleCommand(message.text);
-  await sendTelegramMessage(reply);
+  // Explicitly targets the sender's own chat — without this it always
+  // falls back to the first TELEGRAM_CHAT_ID env admin regardless of
+  // who actually messaged, which was invisible back when that was the
+  // only chat that could ever be authorized, and became a real bug the
+  // moment a second admin (via /admin/telegram) could message too.
+  await sendTelegramMessage(reply, chatId);
 
   return NextResponse.json({ ok: true });
 }
