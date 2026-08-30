@@ -1,7 +1,18 @@
-import Link from "next/link";
 import { requireAdmin } from "@/lib/require-admin";
 import { APP_VERSION } from "@/lib/version";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { GlowNav, type GlowNavLink } from "@/components/GlowNav";
+
+const ADMIN_LINKS: GlowNavLink[] = [
+  { href: "/admin", label: "Dashboard", exact: true },
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/inbox", label: "Inbox" },
+  { href: "/admin/broadcast", label: "Broadcast" },
+  { href: "/admin/dispatchers", label: "Dispatchers" },
+  { href: "/admin/telegram", label: "Telegram Access" },
+  { href: "/dispatcher", label: "Dispatcher Panel ↗" },
+];
 
 // requireAdmin() already calls headers(), which normally opts a route
 // out of static caching automatically — this makes that explicit and
@@ -19,37 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <h1 className="mb-3 text-xl font-bold tracking-tight">
           Admin <span className="align-middle text-xs font-normal text-muted-foreground">v{APP_VERSION}</span>
         </h1>
-        <nav
-          className="flex gap-4 overflow-x-auto text-sm font-medium text-muted-foreground [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <Link href="/admin" className="shrink-0 transition-colors hover:text-foreground">
-            Dashboard
-          </Link>
-          <Link href="/admin/products" className="shrink-0 transition-colors hover:text-foreground">
-            Products
-          </Link>
-          <Link href="/admin/orders" className="shrink-0 transition-colors hover:text-foreground">
-            Orders
-          </Link>
-          <Link href="/admin/inbox" className="shrink-0 transition-colors hover:text-foreground">
-            Inbox
-          </Link>
-          <Link href="/admin/broadcast" className="shrink-0 transition-colors hover:text-foreground">
-            Broadcast
-          </Link>
-          <Link href="/admin/dispatchers" className="shrink-0 transition-colors hover:text-foreground">
-            Dispatchers
-          </Link>
-          <Link href="/admin/telegram" className="shrink-0 transition-colors hover:text-foreground">
-            Telegram Access
-          </Link>
-          <Link
-            href="/dispatcher"
-            className="flex shrink-0 items-center gap-1 transition-colors hover:text-foreground"
-          >
-            Dispatcher Panel ↗
-          </Link>
-        </nav>
+        <GlowNav links={ADMIN_LINKS} />
       </div>
       {children}
     </div>

@@ -181,8 +181,15 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Safety net against any element (now or added later) that ends up
+       wider than the viewport on narrow screens — this only clips
+       genuine overflow bugs. Deliberately-scrollable rows (the admin
+       nav, a product carousel, etc.) use their own nested
+       overflow-x-auto container, which this doesn't affect at all. */
+    overflow-x: hidden;
   }
   html {
     @apply font-sans;
+    overflow-x: hidden;
   }
 }
