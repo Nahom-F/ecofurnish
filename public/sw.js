@@ -3,7 +3,7 @@
 // experience. Anything touching money, auth, or personalized/admin data is deliberately
 // left untouched so it always goes straight to the network.
 
-const CACHE_VERSION = 'ecofurnish-v1';
+const CACHE_VERSION = 'ecofurnish-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
@@ -16,10 +16,13 @@ const APP_SHELL = [
 ];
 
 // Never intercept these — always go straight to the network. This covers auth,
-// payments, cart mutations, admin data, and anything else that must never be stale.
+// payments, cart mutations, admin/dispatcher/driver data, and anything else that
+// must never be stale.
 const NEVER_CACHE_PREFIXES = [
   '/api/',
   '/admin',
+  '/dispatcher',
+  '/driver',
   '/account',
   '/checkout',
   '/cart',

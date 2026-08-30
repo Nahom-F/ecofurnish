@@ -19,7 +19,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 // it already had everywhere else, not a special case.
 const MINIMAL_ROUTES = new Set(["/sign-in", "/sign-up"]);
 
-export default function Navbar() {
+export default function Navbar({ categories }: { categories: string[] }) {
   const pathname = usePathname();
 
   if (MINIMAL_ROUTES.has(pathname)) {
@@ -49,7 +49,7 @@ export default function Navbar() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:h-20 sm:px-6">
         <div className="flex items-center gap-1 sm:gap-2">
-          <MobileNav />
+          <MobileNav categories={categories} />
           <Logo />
         </div>
 

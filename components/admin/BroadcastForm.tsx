@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Send, Users, Megaphone, User, Search, AtSign } from "lucide-react";
+import { Send, Users, Megaphone, User, Search, AtSign, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,12 @@ export function BroadcastForm({
   counts,
   customers,
 }: {
-  counts: { allCustomers: number; subscribers: number };
+  counts: {
+    allCustomers: number;
+    subscribers: number;
+    driversWithEmail: number;
+    driversTotal: number;
+  };
   customers: Customer[];
 }) {
   const [audience, setAudience] = useState<BroadcastAudience>("subscribers");
@@ -44,15 +49,17 @@ export function BroadcastForm({
   const recipientCount =
     audience === "subscribers"
       ? counts.subscribers
-      : audience === "single-customer"
-        ? selectedCustomer
-          ? 1
-          : 0
-        : audience === "custom-address"
-          ? isValidEmail
+      : audience === "drivers"
+        ? counts.driversWithEmail
+        : audience === "single-customer"
+          ? selectedCustomer
             ? 1
             : 0
-          : counts.allCustomers;
+          : audience === "custom-address"
+            ? isValidEmail
+              ? 1
+              : 0
+            : counts.allCustomers;
 
   const matchingCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
@@ -112,7 +119,7 @@ export function BroadcastForm({
     <div className="max-w-xl space-y-6">
       <div>
         <Label className="mb-2 block">Audience</Label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <button
             type="button"
             onClick={() => setAudience("subscribers")}
@@ -147,6 +154,24 @@ export function BroadcastForm({
             <p className="mt-1 text-xs text-muted-foreground">
               {counts.allCustomers} accounts — reserve this for genuinely important, infrequent
               notices, not routine updates. No unsubscribe link, same as your order emails.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAudience("drivers")}
+            className={`rounded-lg border p-4 text-left transition-colors ${
+              audience === "drivers"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium">
+              <Truck className="h-4 w-4" />
+              Drivers
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {counts.driversWithEmail} of {counts.driversTotal} approved drivers have an email
+              on file — phone is their required contact, so this won&apos;t reach everyone.
             </p>
           </button>
           <button
@@ -309,7 +334,9 @@ export function BroadcastForm({
                     : `This goes out immediately to ${
                         audience === "subscribers"
                           ? "everyone on the newsletter list"
-                          : "every customer account"
+                          : audience === "drivers"
+                            ? "every approved driver with an email on file"
+                            : "every customer account"
                       }. Sending a test to yourself first is a good idea if you haven't already.`}
               </DialogDescription>
             </DialogHeader>

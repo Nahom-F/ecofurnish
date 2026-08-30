@@ -12,6 +12,8 @@ import {
   Leaf,
   Mail,
   ChevronRight,
+  ChevronDown,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +24,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { navigation } from "@/config/navigation";
+import { useSession } from "@/lib/auth-client";
 import Logo from "./Logo";
 
 // Icon + display order for the mobile drawer specifically — the shared
@@ -36,9 +39,12 @@ const ICONS: Record<string, typeof HomeIcon> = {
 };
 const MOBILE_ORDER = ["Home", "Shop", "Collections", "About", "Contact"];
 
-export default function MobileNav() {
+export default function MobileNav({ categories }: { categories: string[] }) {
   const [open, setOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
 
   const items = [...navigation].sort(
     (a, b) => MOBILE_ORDER.indexOf(a.title) - MOBILE_ORDER.indexOf(b.title)
@@ -87,7 +93,7 @@ export default function MobileNav() {
           </DialogClose>
         </div>
 
-        <nav aria-label="Mobile navigation" className="flex-1 p-4">
+        <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
             {items.map((item) => {
               const Icon = ICONS[item.title] ?? LayoutGrid;
@@ -105,6 +111,61 @@ export default function MobileNav() {
                 </li>
               );
             })}
+
+            {categories.length > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setCategoriesOpen((v) => !v)}
+                  aria-expanded={categoriesOpen}
+                  className="flex w-full items-center gap-3 rounded-xl bg-muted/40 px-4 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <LayoutGrid className="h-5 w-5 text-emerald-700" />
+                  <span className="flex-1 text-left">Categories</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                      categoriesOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {categoriesOpen && (
+                  <ul className="mt-1 space-y-1 pl-4">
+                    {categories.map((category) => (
+                      <li key={category}>
+                        {/* Plain Link, no handleItemClick — this genuinely
+                            changes the ?category= search param even when
+                            already on "/", which Link already handles
+                            correctly on its own; the special same-page
+                            hash-scroll logic above is only for the
+                            hash-only links like "/#all-products". */}
+                        <Link
+                          href={`/?category=${encodeURIComponent(category)}#all-products`}
+                          onClick={() => setOpen(false)}
+                          className="flex items-center justify-between rounded-lg px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          {category}
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )}
+
+            {isAdmin && (
+              <li>
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <ShieldCheck className="h-5 w-5 text-emerald-700" />
+                  <span className="flex-1">Admin</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 

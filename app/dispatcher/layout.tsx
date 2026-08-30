@@ -10,16 +10,21 @@ export default async function DispatcherLayout({ children }: { children: React.R
   return (
     <div className="container mx-auto max-w-6xl px-4 py-10">
       <AutoRefresh />
-      <div className="mb-8 flex items-center gap-6 border-b border-border/60 pb-4">
-        <h1 className="text-xl font-bold tracking-tight">Dispatcher</h1>
-        <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
-          <Link href="/dispatcher" className="transition-colors hover:text-foreground">
+      <div className="mb-8 border-b border-border/60 pb-4">
+        <h1 className="mb-3 text-xl font-bold tracking-tight">Dispatcher</h1>
+        <nav
+          className="flex gap-4 overflow-x-auto text-sm font-medium text-muted-foreground [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <Link href="/dispatcher" className="shrink-0 transition-colors hover:text-foreground">
             Applications
           </Link>
-          <Link href="/dispatcher/deliveries" className="transition-colors hover:text-foreground">
+          <Link
+            href="/dispatcher/deliveries"
+            className="shrink-0 transition-colors hover:text-foreground"
+          >
             Deliveries
           </Link>
-          <Link href="/dispatcher/claims" className="transition-colors hover:text-foreground">
+          <Link href="/dispatcher/claims" className="shrink-0 transition-colors hover:text-foreground">
             Claims
           </Link>
         </nav>

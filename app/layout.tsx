@@ -1,6 +1,9 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { sql } from 'drizzle-orm'
+import { db } from '@/db'
+import { products } from '@/db/schema'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from "@teispace/next-themes";
 import Navbar from '@/components/layout/navbar/Navbar'
@@ -20,6 +23,14 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
 })
+
+// No dynamic APIs (headers/cookies) here, so this stays static/ISR —
+// same reasoning and window as the homepage's own revalidate (see
+// app/page.tsx). This doesn't force any OTHER route dynamic either:
+// Next.js determines static/dynamic per route based on that route's own
+// chain of layouts+page, so /admin's `force-dynamic` (and similar) still
+// takes full effect independently.
+export const revalidate = 300
 
 const title = `${siteConfig.name} — Sustainable furniture from recycled materials`
 const description =
@@ -80,11 +91,22 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Distinct, real category values that actually exist on products right
+  // now — same source of truth catalog-view.tsx derives client-side from
+  // already-loaded products (Array.from(new Set(products.map(p =>
+  // p.category)))), just computed here in SQL instead since the layout
+  // doesn't have the full product list loaded.
+  const categoryRows = await db
+    .selectDistinct({ category: products.category })
+    .from(products)
+    .orderBy(sql`${products.category} asc`)
+  const categories = categoryRows.map((r) => r.category)
+
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col font-sans antialiased">
@@ -92,7 +114,7 @@ export default function RootLayout({
           <CurrencyProvider>
             <CartProvider>
               <WishlistProvider>
-                <Navbar />
+                <Navbar categories={categories} />
                 <div className="flex-1">{children}</div>
                 <Footer />
                 <Toaster />

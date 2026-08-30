@@ -1,9 +1,9 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { and, eq, isNull, isNotNull, sql } from "drizzle-orm";
 import { Resend } from "resend";
 import { db } from "@/db";
-import { newsletterSubscribers } from "@/db/schema";
+import { newsletterSubscribers, driverApplications } from "@/db/schema";
 import { requireAdmin } from "@/lib/require-admin";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -12,6 +12,7 @@ const FROM_ADDRESS = "EcoFurnish <admin@ecofurnish.abrdns.com>";
 export type BroadcastAudience =
   | "all-customers"
   | "subscribers"
+  | "drivers"
   | "single-customer"
   | "custom-address";
 
@@ -28,6 +29,29 @@ async function getAllCustomerEmails(): Promise<{ email: string; name: string }[]
   return result.rows;
 }
 
+// Approved, non-blacklisted drivers who have an email on file — email is
+// optional for drivers (phone is the required contact, see
+// driverApplications.email in db/schema.ts), so this is necessarily a
+// subset of all active drivers, not every one of them. See
+// getBroadcastAudienceCounts below, which surfaces that gap in the UI
+// rather than silently under-delivering.
+async function getApprovedDriverEmails(): Promise<{ email: string; name: string }[]> {
+  const rows = await db
+    .select({ email: driverApplications.email, name: driverApplications.fullName })
+    .from(driverApplications)
+    .where(
+      and(
+        eq(driverApplications.status, "approved"),
+        isNull(driverApplications.blacklistedAt),
+        isNotNull(driverApplications.email)
+      )
+    );
+  // isNotNull guarantees email is populated at the DB level, but
+  // Drizzle's inferred row type still carries `string | null` here —
+  // this narrows it back to plain `string` for callers.
+  return rows.map((r) => ({ email: r.email as string, name: r.name }));
+}
+
 // Exposed for the "message one specific customer" picker in
 // BroadcastForm — same query as above, just under a name that makes
 // sense as a public export (getAllCustomerEmails predates that use case
@@ -40,11 +64,23 @@ export async function getAllCustomers() {
 
 export async function getBroadcastAudienceCounts() {
   await requireAdmin();
-  const [customers, subscribers] = await Promise.all([
+  const [customers, subscribers, driversWithEmail, approvedDrivers] = await Promise.all([
     getAllCustomerEmails(),
     db.select({ email: newsletterSubscribers.email }).from(newsletterSubscribers),
+    getApprovedDriverEmails(),
+    db
+      .select({ id: driverApplications.id })
+      .from(driverApplications)
+      .where(
+        and(eq(driverApplications.status, "approved"), isNull(driverApplications.blacklistedAt))
+      ),
   ]);
-  return { allCustomers: customers.length, subscribers: subscribers.length };
+  return {
+    allCustomers: customers.length,
+    subscribers: subscribers.length,
+    driversWithEmail: driversWithEmail.length,
+    driversTotal: approvedDrivers.length,
+  };
 }
 
 function wrapHtml(bodyHtml: string, unsubscribeUrl?: string) {
@@ -73,9 +109,14 @@ function appUrl() {
  * out" of account-related notices short of deleting the account. It is
  * NOT the list for regular updates/promotions — that's what the opt-in
  * `subscribers` audience and its existing unsubscribe machinery are for.
- * Sending routine marketing to every account holder is what gets a
- * sending domain flagged as spam, which would also degrade delivery of
- * the verification/reset-password emails sharing that same domain.
+ * `drivers` follows the same no-unsubscribe reasoning as all-customers —
+ * an operational notice to active drivers, not a marketing list — and
+ * only reaches approved, non-blacklisted drivers who have an email on
+ * file, which won't be all of them (email is optional for drivers; see
+ * getApprovedDriverEmails above). Sending routine marketing to every
+ * account holder is what gets a sending domain flagged as spam, which
+ * would also degrade delivery of the verification/reset-password emails
+ * sharing that same domain.
  */
 export async function sendBroadcastEmail({
   subject,
@@ -106,6 +147,8 @@ export async function sendBroadcastEmail({
   } else if (audience === "subscribers") {
     recipients = await db.select({ email: newsletterSubscribers.email }).from(newsletterSubscribers);
     unsubscribable = true;
+  } else if (audience === "drivers") {
+    recipients = await getApprovedDriverEmails();
   } else if (audience === "single-customer") {
     if (!recipientEmail) {
       return { success: false as const, error: "No customer selected." };
