@@ -181,15 +181,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
     /* Safety net against any element (now or added later) that ends up
        wider than the viewport on narrow screens — this only clips
        genuine overflow bugs. Deliberately-scrollable rows (the admin
        nav, a product carousel, etc.) use their own nested
-       overflow-x-auto container, which this doesn't affect at all. */
-    overflow-x: hidden;
-  }
-  html {
-    @apply font-sans;
+       overflow-x-auto container, which this doesn't affect at all.
+       Deliberately only on html, NOT body: setting overflow-x on body
+       changes which element the browser treats as the page's actual
+       scrolling container, which breaks position:sticky for children
+       like the navbar (sticky computes relative to that container) —
+       html alone is the true root scroller and doesn't have that
+       side effect. */
     overflow-x: hidden;
   }
 }
