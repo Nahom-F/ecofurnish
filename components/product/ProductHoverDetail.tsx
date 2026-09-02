@@ -213,8 +213,8 @@ export default function ProductHoverDetail({
         <button
           type="button"
           tabIndex={-1}
-          aria-pressed={liked}
           aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+          aria-pressed={liked}
           onClick={handleWishlist}
           className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
             liked

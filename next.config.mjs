@@ -52,42 +52,49 @@ const nextConfig = {
     ],
   },
   async headers() {
+    // Built from what the app actually loads client-side (checked every
+    // "use client" component and lib/*.ts caller): Turnstile is the only
+    // cross-origin script/frame, Leaflet's OSM tiles are the only extra
+    // image host beyond the ones already allowed for next/image, and every
+    // other external API call (Chapa, Gemini/Groq, Telegram, geocoding,
+    // FX rates) happens from Server Actions/route handlers, never the
+    // browser, so none of those hosts belong in a browser-facing CSP.
+    //
+    // script-src/style-src keep 'unsafe-inline': Next's App Router streams
+    // RSC payloads into the page via inline <script> tags, and Leaflet's
+    // marker (DeliveryMapPicker) sets an inline style attribute — blocking
+    // those would break hydration and the dispatcher map. A stricter,
+    // nonce-based CSP (per Next's own CSP guide) can replace this later,
+    // but it needs middleware changes and real testing against Turnstile's
+    // dynamically-injected script before it ships — not swapped in blind.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://cdn.discordapp.com https://*.tile.openstreetmap.org",
+      "font-src 'self' data:",
+      "connect-src 'self' https://challenges.cloudflare.com",
+      "frame-src https://challenges.cloudflare.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
       {
-        // Applies to every route, including API routes — these are all
-        // static per-response headers (no per-request value needed), so
-        // they belong here rather than in middleware.ts. The one exception
-        // is Content-Security-Policy: it needs a fresh nonce per request to
-        // trust Next's own inline hydration scripts without 'unsafe-inline',
-        // so that one is set in middleware.ts instead.
+        // Applies to every route, including API routes — none of these
+        // headers are safe to skip just because a request isn't a page.
         source: "/(.*)",
         headers: [
-          // Legacy fallback for browsers that don't honor CSP's
-          // frame-ancestors (set alongside frame-ancestors 'self' in
-          // middleware.ts) — stops the site being framed by another origin
-          // for clickjacking.
+          { key: "Content-Security-Policy", value: csp },
+          // Belt-and-suspenders with frame-ancestors above: XFO is what
+          // the Observatory/older browsers actually check for, so it
+          // stays even though frame-ancestors is the modern equivalent.
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          // Stops browsers from guessing ("sniffing") a response's MIME
-          // type from its content and running it as something more
-          // dangerous than what the server declared (e.g. treating an
-          // uploaded image as executable script).
           { key: "X-Content-Type-Options", value: "nosniff" },
-          // Sends the full URL as a referrer to same-origin requests, but
-          // only the origin (no path/query) cross-origin — avoids leaking
-          // things like order IDs or search terms in checkout/account URLs
-          // to third parties (Unsplash, OSM tiles, etc.) while keeping
-          // useful analytics referrer data.
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // 1 year + subdomains + preload: the full requirements for
-          // submitting to the HSTS preload list (https://hstspreload.org),
-          // so browsers refuse to ever load this site over plain HTTP,
-          // even on someone's very first visit. Submitting is optional and
-          // manual — this header alone already forces HTTPS for a year at
-          // a time regardless of submission.
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains; preload",
-          },
         ],
       },
       {

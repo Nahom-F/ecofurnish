@@ -56,7 +56,7 @@ export default async function Home() {
         )}
       </div>
 
-      <AdBanner videoSrc="/ads/ad-1.mp4" />
+      <AdBanner videoSrc="/ads/ad-1.mp4" posterSrc="/ads/ad-1-poster.jpg" />
 
       <section id="about" className="border-t border-border/60 bg-muted/30">
         <div className="container mx-auto max-w-7xl px-4 py-16">
