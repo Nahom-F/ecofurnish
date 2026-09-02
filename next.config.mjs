@@ -54,6 +54,43 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Applies to every route, including API routes — these are all
+        // static per-response headers (no per-request value needed), so
+        // they belong here rather than in middleware.ts. The one exception
+        // is Content-Security-Policy: it needs a fresh nonce per request to
+        // trust Next's own inline hydration scripts without 'unsafe-inline',
+        // so that one is set in middleware.ts instead.
+        source: "/(.*)",
+        headers: [
+          // Legacy fallback for browsers that don't honor CSP's
+          // frame-ancestors (set alongside frame-ancestors 'self' in
+          // middleware.ts) — stops the site being framed by another origin
+          // for clickjacking.
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // Stops browsers from guessing ("sniffing") a response's MIME
+          // type from its content and running it as something more
+          // dangerous than what the server declared (e.g. treating an
+          // uploaded image as executable script).
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Sends the full URL as a referrer to same-origin requests, but
+          // only the origin (no path/query) cross-origin — avoids leaking
+          // things like order IDs or search terms in checkout/account URLs
+          // to third parties (Unsplash, OSM tiles, etc.) while keeping
+          // useful analytics referrer data.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // 1 year + subdomains + preload: the full requirements for
+          // submitting to the HSTS preload list (https://hstspreload.org),
+          // so browsers refuse to ever load this site over plain HTTP,
+          // even on someone's very first visit. Submitting is optional and
+          // manual — this header alone already forces HTTPS for a year at
+          // a time regardless of submission.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
+        ],
+      },
+      {
         // Never let a CDN or browser cache the service worker file itself —
         // that's how updates get stuck and old cached versions calcify.
         source: "/sw.js",

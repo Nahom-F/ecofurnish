@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import dynamic from 'next/dynamic'
 import { sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { products } from '@/db/schema'
@@ -13,10 +14,17 @@ import { WishlistProvider } from '@/lib/wishlist-context'
 import { CurrencyProvider } from '@/lib/currency-context'
 import { siteConfig } from '@/config/site'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
-import InstallAppBanner from '@/components/pwa/InstallAppBanner'
 import MobileBottomNav from '@/components/layout/navbar/MobileBottomNav'
-import SupportChatWidget from '@/components/support/SupportChatWidget'
 import './globals.css'
+
+// Both render as closed overlays (a floating chat bubble, an install
+// prompt banner) on literally every route via this root layout, but
+// neither has anything to show until a visitor interacts with them or a
+// browser fires 'beforeinstallprompt'. Loading them with next/dynamic
+// pulls their JS out of the initial bundle into their own chunk, fetched
+// only once they're actually needed — pure code-splitting, same UI.
+const InstallAppBanner = dynamic(() => import('@/components/pwa/InstallAppBanner'))
+const SupportChatWidget = dynamic(() => import('@/components/support/SupportChatWidget'))
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({
