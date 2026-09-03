@@ -60,7 +60,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
             className="object-contain"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
-          <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-green-600 text-white hover:bg-green-700">
+          <Badge className="absolute left-4 top-4 flex items-center gap-1 bg-emerald-700 text-white hover:bg-emerald-800">
             <Leaf className="h-3 w-3" />
             {product.plasticWeightKg}kg Plastic Diverted
           </Badge>

@@ -12,6 +12,7 @@ export default function HeroImage() {
         width={550}
         height={550}
         priority
+        sizes="(max-width: 1023px) 100vw, 550px"
         className="relative z-10 object-contain"
       />
     </div>

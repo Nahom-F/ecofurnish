@@ -16,7 +16,7 @@ export default function ProductImage({ product }: { product: Product }) {
         sizes="(max-width: 767px) 50vw, (max-width: 1024px) 33vw, 25vw"
       />
       {/* Eco-Impact Badge overlaid on the image */}
-      <Badge className="absolute left-2 top-2 flex items-center gap-1 bg-green-600 px-1.5 py-0.5 text-[0.65rem] text-white hover:bg-green-700 sm:left-3 sm:top-3 sm:px-2 sm:py-0.5 sm:text-xs">
+      <Badge className="absolute left-2 top-2 flex items-center gap-1 bg-emerald-700 px-1.5 py-0.5 text-[0.65rem] text-white hover:bg-emerald-800 sm:left-3 sm:top-3 sm:px-2 sm:py-0.5 sm:text-xs">
         <Leaf className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
         {product.plasticWeightKg}kg Diverted
       </Badge>

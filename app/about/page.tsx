@@ -23,6 +23,13 @@ export default function AboutPage() {
       </section>
 
       <section className="container mx-auto max-w-4xl px-4 py-16">
+        {/* Visually hidden — the grid below reads fine without a visible
+            section title, but skipping straight from the page's <h1> to
+            these <h3> cards with nothing in between is a real heading-order
+            violation, not just a style choice. sr-only keeps the design
+            exactly as-is while giving screen reader users the same outline
+            sighted users get for free from the layout. */}
+        <h2 className="sr-only">What we stand for</h2>
         <div className="grid gap-10 sm:grid-cols-3">
           <div>
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
