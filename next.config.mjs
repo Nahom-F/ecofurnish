@@ -52,38 +52,66 @@ const nextConfig = {
     ],
   },
   async headers() {
+    // Built from what the app actually loads client-side: Turnstile is the
+    // only cross-origin script/frame, Leaflet's OSM tiles are the only
+    // extra image host, and every other external call (Chapa, Gemini/Groq,
+    // Telegram, geocoding, FX rates) happens from Server Actions/route
+    // handlers, never the browser — none of those belong in a
+    // browser-facing CSP. Chapa's checkout itself is a full top-level
+    // redirect (window.location.href in app/checkout/page.tsx), not a
+    // fetch/frame/form-post, so it needs no entry either.
+    //
+    // NOT nonce-based, deliberately: app/page.tsx is statically generated
+    // (`export const revalidate = 300`) and served from cache to every
+    // visitor, but a nonce has to be unique per request. A per-request
+    // middleware nonce doesn't match the nonce baked into that cached
+    // HTML's inline hydration scripts, so the browser silently refuses to
+    // run them — the page renders its skeleton shell and never hydrates.
+    // (Confirmed this the hard way — see chat.) Next's own CSP guide notes
+    // this exact limitation: "pages must be dynamically rendered to use
+    // nonces." Forcing the homepage dynamic just to enable nonces would
+    // undo the ISR caching it was deliberately built with, so script-src
+    // keeps 'unsafe-inline' instead — a real but smaller relaxation than
+    // it sounds, since the origin allowlisting below still does most of
+    // CSP's actual work (blocking exfiltration to and execution of
+    // scripts from anywhere not explicitly listed here).
+    //
+    // Vercel's preview-only Toolbar/Live-Feedback overlay
+    // (https://vercel.com/docs/vercel-toolbar/managing-toolbar#using-a-content-security-policy)
+    // needs a few extra sources; VERCEL_ENV is fixed per-deployment (not
+    // per-request), so resolving it here — instead of per-request in
+    // middleware — is both correct and one less moving part. Production
+    // visitors never load vercel.live at all, so this never widens the
+    // production policy.
+    const isPreview = process.env.VERCEL_ENV === "preview";
+    const csp = [
+      `default-src 'self'`,
+      `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isPreview ? " https://vercel.live" : ""}`,
+      `style-src 'self' 'unsafe-inline'${isPreview ? " https://vercel.live" : ""}`,
+      `img-src 'self' data: blob: https://images.unsplash.com https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://cdn.discordapp.com https://*.tile.openstreetmap.org${isPreview ? " https://vercel.live https://vercel.com" : ""}`,
+      `font-src 'self' data:${isPreview ? " https://vercel.live https://assets.vercel.com" : ""}`,
+      `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com${isPreview ? " https://vercel.live wss://ws-us3.pusher.com" : ""}`,
+      `frame-src https://challenges.cloudflare.com${isPreview ? " https://vercel.live" : ""}`,
+      `object-src 'none'`,
+      `base-uri 'self'`,
+      `form-action 'self'`,
+      `frame-ancestors 'self'`,
+      `upgrade-insecure-requests`,
+    ].join("; ");
+
     return [
       {
-        // Applies to every route, including API routes — these are all
-        // static per-response headers (no per-request value needed), so
-        // they belong here rather than in middleware.ts. The one exception
-        // is Content-Security-Policy: it needs a fresh nonce per request to
-        // trust Next's own inline hydration scripts without 'unsafe-inline',
-        // so that one is set in middleware.ts instead.
+        // Applies to every route, including API routes — none of these
+        // headers are safe to skip just because a request isn't a page.
         source: "/(.*)",
         headers: [
-          // Legacy fallback for browsers that don't honor CSP's
-          // frame-ancestors (set alongside frame-ancestors 'self' in
-          // middleware.ts) — stops the site being framed by another origin
-          // for clickjacking.
+          { key: "Content-Security-Policy", value: csp },
+          // Belt-and-suspenders with frame-ancestors above: XFO is what
+          // the Observatory/older browsers actually check for, so it
+          // stays even though frame-ancestors is the modern equivalent.
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          // Stops browsers from guessing ("sniffing") a response's MIME
-          // type from its content and running it as something more
-          // dangerous than what the server declared (e.g. treating an
-          // uploaded image as executable script).
           { key: "X-Content-Type-Options", value: "nosniff" },
-          // Sends the full URL as a referrer to same-origin requests, but
-          // only the origin (no path/query) cross-origin — avoids leaking
-          // things like order IDs or search terms in checkout/account URLs
-          // to third parties (Unsplash, OSM tiles, etc.) while keeping
-          // useful analytics referrer data.
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // 1 year + subdomains + preload: the full requirements for
-          // submitting to the HSTS preload list (https://hstspreload.org),
-          // so browsers refuse to ever load this site over plain HTTP,
-          // even on someone's very first visit. Submitting is optional and
-          // manual — this header alone already forces HTTPS for a year at
-          // a time regardless of submission.
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains; preload",
