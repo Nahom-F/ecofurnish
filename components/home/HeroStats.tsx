@@ -18,9 +18,9 @@ export default function HeroStats() {
     <div className="mt-10 flex flex-wrap gap-8">
       {stats.map((stat) => (
         <div key={stat.label}>
-          <h3 className="text-2xl font-bold text-foreground">
+          <p className="text-2xl font-bold text-foreground">
             {stat.value}
-          </h3>
+          </p>
 
           <p className="text-sm text-muted-foreground">
             {stat.label}

@@ -137,7 +137,7 @@ export function CatalogView({ products }: { products: Product[] }) {
         </div>
 
         <Select value={room} onValueChange={(v) => setRoom(v ?? "all")}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-40" aria-label="Filter by room">
             <SelectValue placeholder="Room" />
           </SelectTrigger>
           <SelectContent>
@@ -151,7 +151,7 @@ export function CatalogView({ products }: { products: Product[] }) {
         </Select>
 
         <Select value={category} onValueChange={(v) => setCategory(v ?? "all")}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48" aria-label="Filter by category">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -165,7 +165,7 @@ export function CatalogView({ products }: { products: Product[] }) {
         </Select>
 
         <Select value={currency} onValueChange={(v) => setCurrency((v as Currency) ?? "ETB")}>
-          <SelectTrigger className="w-full sm:w-28">
+          <SelectTrigger className="w-full sm:w-28" aria-label="Select currency">
             <SelectValue placeholder="Currency" />
           </SelectTrigger>
           <SelectContent>
@@ -189,15 +189,27 @@ export function CatalogView({ products }: { products: Product[] }) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((product, index) => (
-            <div
-              key={product.id}
-              className="animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-backwards duration-500"
-              style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
-            >
-              <ProductCard product={product} currency={currency} />
-            </div>
-          ))}
+          {filtered.map((product, index) => {
+            // Past the first couple of rows, nobody is watching the
+            // stagger anyway — skip the animation class and inline
+            // animationDelay style entirely instead of just capping the
+            // delay, so a full catalog isn't paying style/layout cost on
+            // every card for an effect only the first ~8 are ever seen in.
+            const animated = index < 8;
+            return (
+              <div
+                key={product.id}
+                className={
+                  animated
+                    ? "animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-backwards duration-500"
+                    : undefined
+                }
+                style={animated ? { animationDelay: `${index * 40}ms` } : undefined}
+              >
+                <ProductCard product={product} currency={currency} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

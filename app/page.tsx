@@ -1,15 +1,24 @@
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { Leaf, Recycle, Truck } from "lucide-react";
 import { attachRatings } from "@/lib/reviews";
 import Hero from "@/components/home/Hero";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import Categories from "@/components/home/Categories";
 import Testimonials from "@/components/home/Testimonials";
-import Newsletter from "@/components/home/Newsletter";
-import AdBanner from "@/components/home/AdBanner";
 import { CatalogView } from "@/components/catalog-view";
+
+// Both are the very last things on the page, and neither affects LCP or
+// anything above the fold — Newsletter is a self-contained client
+// component (its own useState/useEffect/session check), and AdBanner
+// already defers its heavy part (the video) internally, but its component
+// code and IntersectionObserver setup don't need to be in the initial
+// bundle either. Splitting them out is free: nothing here is needed until
+// a visitor has scrolled most of the way down.
+const Newsletter = dynamic(() => import("@/components/home/Newsletter"));
+const AdBanner = dynamic(() => import("@/components/home/AdBanner"));
 
 // This page makes no calls to headers()/cookies(), so Next statically
 // generates it once at build time and serves that same HTML from Vercel's

@@ -74,9 +74,9 @@ export default function AdBanner({ videoSrc, posterSrc }: AdBannerProps) {
                 className="h-full w-full rounded-xl bg-black object-cover"
               />
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- this
-              // is a tiny static poster frame, not worth next/image's
+              // Poster frame is a tiny static image, not worth next/image's
               // optimization pipeline for something already this small.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={posterSrc}
                 alt=""

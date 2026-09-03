@@ -33,6 +33,10 @@ export const siteConfig = {
   },
 } as const;
 export const HERO_IMAGE = {
-  src: "/products/eco-lounge-chair.png",
+  // Same photo as the 1.8MB /products/eco-lounge-chair.png (still referenced
+  // by db/seed.ts's demo data), but this is the properly compressed copy —
+  // already in use in components/auth/AuthSidePanel.tsx — so the hero no
+  // longer ships an uncompressed PNG on every homepage load.
+  src: "/images/products/eco-lounge-chair.jpg",
   alt: "Eco Lounge Chair — recycled-plastic shell, oak frame",
 };
