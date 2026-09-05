@@ -11,7 +11,7 @@ const productData = [
     description:
       "A compact bar stool with a seat molded from recycled ocean plastic and a solid oak frame.",
     price: "3500.00",
-    imageUrl: "/products/eco-bar-stool.png",
+    imageUrl: "/products/eco-bar-stool.jpg",
     category: "Seating",
     rooms: ["Living Room"],
     stock: 24,
@@ -22,7 +22,7 @@ const productData = [
     description:
       "A relaxed lounge chair with a recycled-plastic shell, oak frame, and a removable linen cushion set.",
     price: "9500.00",
-    imageUrl: "/products/eco-lounge-chair.png",
+    imageUrl: "/products/eco-lounge-chair.jpg",
     category: "Seating",
     rooms: ["Living Room", "Bedroom"],
     stock: 12,
@@ -33,7 +33,7 @@ const productData = [
     description:
       "A weather-resistant outdoor bench built from reclaimed hardwood and recycled composite slats.",
     price: "7500.00",
-    imageUrl: "/products/garden-bench.png",
+    imageUrl: "/products/garden-bench.jpg",
     category: "Seating",
     rooms: [],
     stock: 8,
@@ -44,7 +44,7 @@ const productData = [
     description:
       "A round coffee table on a sculptural spider-leg base — oak from the tabletop down through the upper leg, transitioning to a flecked recycled-plastic composite for the lower half of each leg.",
     price: "8500.00",
-    imageUrl: "/products/recycled-coffee-table.png",
+    imageUrl: "/products/recycled-coffee-table.jpg",
     category: "Tables",
     rooms: ["Living Room"],
     stock: 10,
@@ -55,7 +55,7 @@ const productData = [
     description:
       "A clean-lined work desk with a dark speckled recycled-plastic composite top and legs, built to last.",
     price: "11000.00",
-    imageUrl: "/products/work-desk.png",
+    imageUrl: "/products/work-desk.jpg",
     category: "Tables",
     rooms: ["Office"],
     stock: 6,
@@ -66,7 +66,7 @@ const productData = [
     description:
       "A stackable, modular shelving unit made from recycled plastic panels and oak trim.",
     price: "6000.00",
-    imageUrl: "/products/modular-shelf.png",
+    imageUrl: "/products/modular-shelf.jpg",
     category: "Storage & Decor",
     rooms: ["Living Room", "Bedroom", "Office"],
     stock: 15,
@@ -77,7 +77,7 @@ const productData = [
     description:
       "A minimalist plant stand made from recycled ocean plastic, finished in a soft terracotta tone.",
     price: "1800.00",
-    imageUrl: "/products/plant-stand.png",
+    imageUrl: "/products/plant-stand.jpg",
     category: "Storage & Decor",
     rooms: ["Living Room", "Bedroom", "Office"],
     stock: 30,

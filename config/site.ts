@@ -33,10 +33,14 @@ export const siteConfig = {
   },
 } as const;
 export const HERO_IMAGE = {
-  // Same photo as the 1.8MB /products/eco-lounge-chair.png (still referenced
-  // by db/seed.ts's demo data), but this is the properly compressed copy —
-  // already in use in components/auth/AuthSidePanel.tsx — so the hero no
-  // longer ships an uncompressed PNG on every homepage load.
+  // Same photo as /products/eco-lounge-chair.jpg (also used in
+  // db/seed.ts's demo data) — this is a separate copy because
+  // components/auth/AuthSidePanel.tsx uses it too, and the two call
+  // sites want independent files rather than sharing one. Both are now
+  // genuine compressed JPEGs (~115KB) — they used to be lossless PNGs
+  // wearing a .jpg extension, at ~1.8MB each, which is why the hero and
+  // the sign-in split panel were both shipping an uncompressed PNG on
+  // every load.
   src: "/images/products/eco-lounge-chair.jpg",
   alt: "Eco Lounge Chair — recycled-plastic shell, oak frame",
 };
